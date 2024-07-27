@@ -1,0 +1,9 @@
+repositories:
+  third_party/noVNC:
+    type: git
+    url: https://github.com/novnc/noVNC.git
+    version: v1.5.0
+  third_party/websockify:
+    type: git
+    url: https://github.com/novnc/websockify.git
+    version: v0.12.0
