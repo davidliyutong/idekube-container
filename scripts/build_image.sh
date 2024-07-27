@@ -32,8 +32,18 @@ if [[ -z $BRANCH ]]; then
   exit 1
 fi
 
+arch=$(uname -m)
+if [[ $arch == "x86_64" ]]; then
+  ARCH="amd64"
+else
+  ARCH=$arch
+fi
+
 # execute the command
 DOCKER_BUILD_ARGS=$(build_docker_args "envfile")
+DOCKER_BUILD_ARGS+=" --build-arg BRANCH=$BRANCH"
+DOCKER_BUILD_ARGS+=" --build-arg ARCH=$ARCH"
+
 # echo "docker build $DOCKER_BUILD_ARGS ."
 
 echo "Building $IMAGE_REF with $BRANCH branch"
