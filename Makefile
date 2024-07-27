@@ -18,4 +18,4 @@ build:
 
 
 run:
-	docker run --name idekube-container -it --rm -p 6081:6081 $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
+	docker run --name idekube-container -it --rm -p 6081:6081 -p 2222:2222 -p 3000:3000 $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
