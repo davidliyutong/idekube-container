@@ -12,9 +12,10 @@ ENV TZ=${TZ}
 ENV LIBGL_ALWAYS_INDIRECT=1
 
 # Change APT Source
-RUN sed -i s@/archive.ubuntu.com/@/mirror.sjtu.edu.cn/@g /etc/apt/sources.list && \
-    sed -i s@/security.ubuntu.com/@/mirror.sjtu.edu.cn/@g /etc/apt/sources.list && \
-    sed -i s@/ports.ubuntu.com/@/mirror.sjtu.edu.cn/@g /etc/apt/sources.list
+ARG APT_MIRROR="mirror.sjtu.edu.cn"
+RUN sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
+    sed -i s@/security.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
+    sed -i s@/ports.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list
 
 # built-in packages
 RUN apt-get update && apt-get install apt-utils -y \

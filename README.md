@@ -46,6 +46,10 @@ Use `make publish_all` to push all containers to the registry.
 
 For multi-arch publish, first publish each architecture with `make publish`, then use `make manifest` to create the manifest list.
 
+### Build Sysetem
+
+The project use Makefile to build the container. A `scripts/build_image.sh` is used to parse `.dockerargs` file and generate docker build arguments. Image produced are taged as `docker.io/davidliyutong/idekube-container:coder-base-latest-amd64` etc.
+
 ## Architecture Explained
 
 There are two flavors: `coder` with novnc support and `jupyter` without novnc support.
