@@ -34,7 +34,7 @@ jobs:
               run: |
                   make publish_all
 
-    publish-latest:
+    build-and-publish-latest:
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -67,7 +67,7 @@ jobs:
 
     create-manifest:
         runs-on: ubuntu-latest
-        needs: [build-and-publish, publish-latest]
+        needs: [build-and-publish, build-and-publish-latest]
         steps:
             - name: Checkout repository
               uses: actions/checkout@v2
