@@ -16,6 +16,12 @@ PLATFORMS := $$(first="True"; for a in $(ARCHS); do if [[ $$first == "True" ]]; 
 build:
 	@export BRANCH=${BRANCH} IMAGE_REF=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}; bash scripts/build_image.sh
 
-
 run:
-	docker run --name idekube-container -it --rm -p 6081:6081 -p 2222:2222 -p 3000:3000 $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
+	docker run --name idekube-container -it --rm -p 2222:2222 -p 3000:3000 -p 8080:80 -p 6081:6081 -e IDEKUBE_INGRESS_HOST=localhost:8080 -e IDEKUBE_INGRESS_PATH=davidliyutong/ $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
+
+debug: build run
+
+.PHONY: pull_deps
+pull_deps:
+	vcs import < manifests/deps.repo
+

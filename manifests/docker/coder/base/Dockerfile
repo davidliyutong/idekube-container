@@ -4,7 +4,6 @@ FROM ubuntu:20.04 as system
 ARG TZ=Asia/Shanghai
 ARG ARCH=amd64
 ARG MACHINE=x86_64
-ARG MACHINE_ALIAS=amd64
 
 # Avoid prompts for time zone
 ENV DEBIAN_FRONTEND noninteractive
@@ -20,7 +19,7 @@ RUN sed -i s@/archive.ubuntu.com/@/mirror.sjtu.edu.cn/@g /etc/apt/sources.list &
 # built-in packages
 RUN apt-get update && apt-get install apt-utils -y \
     && apt-get install -y --no-install-recommends --allow-unauthenticated wget curl vim jq \
-    supervisor sudo net-tools zenity xz-utils \
+    supervisor sudo net-tools zenity xz-utils nginx \
     dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libegl1-mesa libglu1-mesa libglu1 libxv1 \
     python3 python3-pip python3-setuptools python3-wheel python3-dev build-essential cmake \
     # x11vnc
@@ -29,7 +28,7 @@ RUN apt-get update && apt-get install apt-utils -y \
     ttf-ubuntu-font-family ttf-wqy-zenhei \
     # Desktop
     && apt-get install -y --no-install-recommends --allow-unauthenticated \
-    lxde gtk2-engines-murrine gnome-themes-standard gtk2-engines-pixbuf gtk2-engines-murrine arc-theme \
+    lxde gtk2-engines-murrine gtk2-engines-pixbuf gtk2-engines-murrine arc-theme \
     # Firefox
     && apt-get install -y firefox libpci3 \
     # OpenSSH
@@ -68,8 +67,7 @@ COPY third_party/websockify /var/lib/novnc/utils/websockify
 
 # Setup the websocat and ssh
 ARG WEBSOCAT_VERSION=1.13.0
-RUN (wget https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.${MACHINE}-unknown-linux-musl -O /usr/local/bin/websocat \
-    || wget https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.${MACHINE_ALIAS}-unknown-linux-musl -O /usr/local/bin/websocat) \
+RUN wget https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.${MACHINE}-unknown-linux-musl -O /usr/local/bin/websocat \
     && chmod +x /usr/local/bin/websocat
 RUN mkdir -p /run/sshd && echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
 
@@ -80,6 +78,7 @@ RUN wget https://github.com/cdr/code-server/releases/download/v${CODER_VERSION}/
     && ln -s /usr/lib/code-server/bin/code-server /usr/local/bin/code-server \
     && rm /tmp/code-server.tar.gz
 
+
 # Create the IDEKube user with home and bash shell, set the password to 'idekube'
 # Allow 'idekube' to run sudo commands without password by modifying the sudoers file
 RUN useradd -m -s /bin/bash idekube \
@@ -87,19 +86,21 @@ RUN useradd -m -s /bin/bash idekube \
     && echo "idekube ALL=(ALL:ALL) NOPASSWD: ALL" | sudo EDITOR='tee -a' visudo
 
 # Install Miniconda
-RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
+RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-${MACHINE}.sh -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
     && rm /tmp/miniconda.sh
 
+# Configure nginx server for noVNC
+# nginx workers
+RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf
 
 # Setup the root filesystem
-COPY artifacts/rootfs /
-
+COPY artifacts/coder/rootfs /
 
 # Setting Environment Variables for startup.sh
 ENV SHELL=/bin/bash \
     USERNAME=idekube \
     USERID=1000
 
-EXPOSE 3000 80 2222
+EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

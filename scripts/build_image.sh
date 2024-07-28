@@ -43,9 +43,10 @@ fi
 DOCKER_BUILD_ARGS=$(build_docker_args "envfile")
 DOCKER_BUILD_ARGS+=" --build-arg BRANCH=$BRANCH"
 DOCKER_BUILD_ARGS+=" --build-arg ARCH=$ARCH"
-DOCKER_BUILD_ARGS+=" --build-arg MACHINE=$arch"
 if [[ $arch == "arm64" ]]; then
-  DOCKER_BUILD_ARGS+=" --build-arg MACHINE_ALIAS=aarch64"
+  DOCKER_BUILD_ARGS+=" --build-arg MACHINE=aarch64"
+else
+  DOCKER_BUILD_ARGS+=" --build-arg MACHINE=$arch"
 fi
 
 
