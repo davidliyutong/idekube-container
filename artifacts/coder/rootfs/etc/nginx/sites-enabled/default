@@ -3,16 +3,16 @@ server {
     listen [::]:80;
 
 
-    location = /{{ IDEKUBE_INGRESS_PATH }}novnc/ {
-        return 301 $scheme://{{ IDEKUBE_INGRESS_HOST }}/{{ IDEKUBE_INGRESS_PATH }}novnc/vnc.html?autoconnect=1&path=/{{ IDEKUBE_INGRESS_PATH }}novnc/websockify&scale=scale;
+    location = {{ IDEKUBE_INGRESS_PATH }}/novnc/ {
+        return 301 $scheme://{{ IDEKUBE_INGRESS_HOST }}{{ IDEKUBE_INGRESS_PATH }}/novnc/vnc.html?autoconnect=1&path={{ IDEKUBE_INGRESS_PATH }}/novnc/websockify&scale=scale;
     }
 
-    location ~ ^/{{ IDEKUBE_INGRESS_PATH }}novnc/(.*)$ {
+    location ~ ^{{ IDEKUBE_INGRESS_PATH }}/novnc/(.*)$ {
         proxy_pass http://localhost:6081/$1;
     }
 
 
-    location = /{{ IDEKUBE_INGRESS_PATH }}novnc/websockify {
+    location = {{ IDEKUBE_INGRESS_PATH }}/novnc/websockify {
         proxy_pass http://localhost:6081/websockify;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -21,7 +21,7 @@ server {
     }
 
     # Coder
-    location ~ ^/{{ IDEKUBE_INGRESS_PATH }}coder/(.*)$ {
+    location ~ ^{{ IDEKUBE_INGRESS_PATH }}/coder/(.*)$ {
         proxy_pass http://127.0.0.1:3000/$1;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -36,7 +36,7 @@ server {
     }
 
     # SSH via Websocat
-    location = /{{ IDEKUBE_INGRESS_PATH }}ssh {
+    location = {{ IDEKUBE_INGRESS_PATH }}/ssh {
         proxy_pass http://127.0.0.1:2222/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;

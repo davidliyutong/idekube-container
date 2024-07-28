@@ -17,9 +17,8 @@ RUN sed -i s@/archive.ubuntu.com/@/mirror.sjtu.edu.cn/@g /etc/apt/sources.list &
     sed -i s@/ports.ubuntu.com/@/mirror.sjtu.edu.cn/@g /etc/apt/sources.list
 
 # built-in packages
-RUN apt-get update && apt-get install apt-utils -y \
-    && apt-get install -y --no-install-recommends --allow-unauthenticated wget curl vim jq \
-    supervisor sudo net-tools zenity xz-utils nginx \
+RUN apt-get update && apt-get install -y apt-utils wget curl jq zsh -y \
+    && apt-get install -y --no-install-recommends --allow-unauthenticated supervisor sudo net-tools zenity xz-utils nginx \
     dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libegl1-mesa libglu1-mesa libglu1 libxv1 \
     python3 python3-pip python3-setuptools python3-wheel python3-dev build-essential cmake \
     # x11vnc
@@ -89,6 +88,7 @@ RUN useradd -m -s /bin/bash idekube \
 RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-${MACHINE}.sh -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
     && rm /tmp/miniconda.sh
+ENV PATH /opt/miniconda3/bin:$PATH
 
 # Configure nginx server for noVNC
 # nginx workers
@@ -96,6 +96,7 @@ RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf
 
 # Setup the root filesystem
 COPY artifacts/coder/rootfs /
+COPY artifacts/startup.sh /startup.sh
 
 # Setting Environment Variables for startup.sh
 ENV SHELL=/bin/bash \

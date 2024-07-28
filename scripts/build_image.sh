@@ -22,38 +22,51 @@ function build_docker_args {
   echo $build_args
 }
 
-if [[ -z $IMAGE_REF ]]; then
-  echo "IMAGE_REF is not set"
-  exit 1
-fi
 
+REGISTRY=${REGISTRY:-"docker.io"}
+AUTHOR=${AUTHOR:-"davidliyutong"}
+NAME=${NAME:-"idekube-container"}
 if [[ -z $BRANCH ]]; then
   echo "BRANCH is not set"
   exit 1
 fi
 
+# set ARCH variable
 arch=$(uname -m)
 if [[ $arch == "x86_64" ]]; then
   ARCH="amd64"
 else
   ARCH=$arch
 fi
+# fix machine name for arm64
+if [[ $arch == "arm64" ]]; then
+  MACHINE="aarch64"
+else
+  MACHINE=$arch
+fi
+
+# set GIT_TAG variable
+GIT_TAG=${GIT_TAG:-latest}
+GIT_TAG=$(git describe --tags --abbrev=2 2>/dev/null || echo $GIT_TAG)
+DOCKER_BRANCH=$(echo $BRANCH | sed 's/\//-/g')
+TAG=$DOCKER_BRANCH-$GIT_TAG
+
+IMAGE_REF=$REGISTRY/$AUTHOR/$NAME:$TAG-$ARCH
 
 # execute the command
 DOCKER_BUILD_ARGS=$(build_docker_args "envfile")
-DOCKER_BUILD_ARGS+=" --build-arg BRANCH=$BRANCH"
+DOCKER_BUILD_ARGS+=" --build-arg REGISTRY=$REGISTRY"
+DOCKER_BUILD_ARGS+=" --build-arg AUTHOR=$AUTHOR"
+DOCKER_BUILD_ARGS+=" --build-arg NAME=$NAME"
+DOCKER_BUILD_ARGS+=" --build-arg DOCKER_BRANCH=$DOCKER_BRANCH"
+DOCKER_BUILD_ARGS+=" --build-arg GIT_TAG=$GIT_TAG"
 DOCKER_BUILD_ARGS+=" --build-arg ARCH=$ARCH"
-if [[ $arch == "arm64" ]]; then
-  DOCKER_BUILD_ARGS+=" --build-arg MACHINE=aarch64"
-else
-  DOCKER_BUILD_ARGS+=" --build-arg MACHINE=$arch"
-fi
+DOCKER_BUILD_ARGS+=" --build-arg MACHINE=$MACHINE"
 
 
-
-# echo "docker build $DOCKER_BUILD_ARGS ."
-
+# build the image
 echo "Building $IMAGE_REF with $BRANCH branch"
+echo "Build Args: $DOCKER_BUILD_ARGS"
 docker build $DOCKER_BUILD_ARGS . -t $IMAGE_REF -f manifests/docker/$BRANCH/Dockerfile
 
 # remove dangling images

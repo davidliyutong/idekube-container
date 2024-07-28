@@ -63,6 +63,7 @@ RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf
 
 # Setup the root filesystem
 COPY artifacts/jupyter/rootfs /
+COPY artifacts/startup.sh /startup.sh
 
 # Setting Environment Variables for startup.sh
 ENV SHELL=/bin/bash \

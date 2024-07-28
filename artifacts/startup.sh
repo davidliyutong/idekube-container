@@ -8,22 +8,34 @@ else
 fi
 
 # home folder configuration
-if [ ! -d "$HOME/.config/pcmanfm/LXDE/" ]; then
-    mkdir -p $HOME/.config/pcmanfm/LXDE/
-    ln -sf /usr/local/share/doro-lxde-wallpapers/desktop-items-0.conf $HOME/.config/pcmanfm/LXDE/
-    chown -R $USER:$USER $HOME
+IDEKUBE_DESKTOP=${IDEKUBE_DESKTOP:-"false"}
+if $IDEKUBE_DESKTOP; then
+    if [ ! -d "$HOME/.config/pcmanfm/LXDE/" ]; then
+        mkdir -p $HOME/.config/pcmanfm/LXDE/
+        ln -sf /usr/local/share/doro-lxde-wallpapers/desktop-items-0.conf $HOME/.config/pcmanfm/LXDE/
+        chown -R $USER:$USER $HOME
+    fi
 fi
 
 # ------------------------------------------------------
 # response to IDEKUBE_PREFERED_SHELL
 # ------------------------------------------------------
-if [ !-z "$IDEKUBE_PREFERED_SHELL" ]; then
-    if [ -f $IDEKUBE_PREFERED_SHELL ]; then
-        echo "Setting shell to $IDEKUBE_PREFERED_SHELL"
-        usermod -s $IDEKUBE_PREFERED_SHELL $USER
-    else
-        echo "Shell $IDEKUBE_PREFERED_SHELL not found"
-    fi
+IDEKUBE_PREFERED_SHELL=${IDEKUBE_PREFERED_SHELL:-"/bin/bash"}
+if [ -f $IDEKUBE_PREFERED_SHELL ]; then
+    echo "Setting shell to $IDEKUBE_PREFERED_SHELL"
+    usermod -s $IDEKUBE_PREFERED_SHELL $USER
+else
+    echo "Shell $IDEKUBE_PREFERED_SHELL not found"
+fi
+
+# ------------------------------------------------------
+IDEKUBE_INIT_HOME=${IDEKUBE_INIT_HOME:-"false"}
+if $IDEKUBE_INIT_HOME; then
+    echo "Initializing home folder"
+    rsync -r /usr/local/share/home_template/*. $HOME/
+    chown -R $USER:$USER $HOME
+else
+    echo "Skipping home folder initialization"
 fi
 
 # ------------------------------------------------------
@@ -57,12 +69,14 @@ fi
 # ------------------------------------------------------
 # Modify Nginx Config file according to IDEKUBE_INGRESS
 # ------------------------------------------------------
+echo "Configuring Nginx for $IDEKUBE_INGRESS_SCHEME://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH"
 sed -i "s|{{ IDEKUBE_INGRESS_HOST }}|$IDEKUBE_INGRESS_HOST|g" /etc/nginx/sites-enabled/default
 sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/nginx/sites-enabled/default
 
 # ------------------------------------------------------
 # Modify supervisord config file according to IDEKUBE_INGRESS
 # ------------------------------------------------------
+echo "Configuring Supervisord for $IDEKUBE_INGRESS_SCHEME://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH"
 sed -i "s|{{ IDEKUBE_INGRESS_HOST }}|$IDEKUBE_INGRESS_HOST|g" /etc/supervisor/supervisord.conf
 sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/supervisor/supervisord.conf
 sed -i "s|{{ IDEKUBE_INGRESS_SCHEME }}|$IDEKUBE_INGRESS_SCHEME|g" /etc/supervisor/supervisord.conf
