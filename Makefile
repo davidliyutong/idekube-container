@@ -17,7 +17,7 @@ build:
 	@export BRANCH=${BRANCH} IMAGE_REF=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}; bash scripts/build_image.sh
 
 run:
-	docker run --name idekube-container -it --rm -p 2222:2222 -p 3000:3000 -p 8080:80 -p 6081:6081 -e IDEKUBE_INGRESS_HOST=localhost:8080 -e IDEKUBE_INGRESS_PATH=davidliyutong/ $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
+	docker run --name idekube-container -it --rm -p 8080:80 -p 8888:8888 -e IDEKUBE_INGRESS_HOST=localhost:8080 -e IDEKUBE_INGRESS_PATH=davidliyutong/ $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
 
 debug: build run
 

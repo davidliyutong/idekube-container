@@ -7,13 +7,6 @@ else
     HOME=/root
 fi
 
-# home folder configuration
-if [ ! -d "$HOME/.config/pcmanfm/LXDE/" ]; then
-    mkdir -p $HOME/.config/pcmanfm/LXDE/
-    ln -sf /usr/local/share/doro-lxde-wallpapers/desktop-items-0.conf $HOME/.config/pcmanfm/LXDE/
-    chown -R $USER:$USER $HOME
-fi
-
 # ------------------------------------------------------
 # response to IDEKUBE_PREFERED_SHELL
 # ------------------------------------------------------
