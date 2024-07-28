@@ -26,6 +26,7 @@ function build_docker_args {
 REGISTRY=${REGISTRY:-"docker.io"}
 AUTHOR=${AUTHOR:-"davidliyutong"}
 NAME=${NAME:-"idekube-container"}
+APT_MIRROR=${APT_MIRROR:-"mirror.sjtu.edu.cn"}
 if [[ -z $BRANCH ]]; then
   echo "BRANCH is not set"
   exit 1
@@ -62,7 +63,7 @@ DOCKER_BUILD_ARGS+=" --build-arg DOCKER_BRANCH=$DOCKER_BRANCH"
 DOCKER_BUILD_ARGS+=" --build-arg GIT_TAG=$GIT_TAG"
 DOCKER_BUILD_ARGS+=" --build-arg ARCH=$ARCH"
 DOCKER_BUILD_ARGS+=" --build-arg MACHINE=$MACHINE"
-
+DOCKER_BUILD_ARGS+=" --build-arg APT_MIRROR=$APT_MIRROR"
 
 # build the image
 echo "Building $IMAGE_REF with $BRANCH branch"

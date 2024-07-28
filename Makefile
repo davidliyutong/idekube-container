@@ -25,7 +25,7 @@ build: pull_deps
 build_all: pull_deps
 	@for branch in $(BRANCHES); do \
 		echo "Building for branch $$branch"; \
-		@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/build_image.sh; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/build_image.sh; \
 	done
 
 publish: build

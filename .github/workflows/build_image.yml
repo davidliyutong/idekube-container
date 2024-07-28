@@ -1,12 +1,13 @@
-name: Docker Build and Publish
+name: Docker Build
 
 on:
-    workflow_dispatch:
-    release:
-        types: [published]
+    push:
+        branches:
+            - main
+    pull_request:
 
 jobs:
-    build-and-publish:
+    build:
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -30,11 +31,11 @@ jobs:
             - name: Install vcs
               run: sudo apt-get install -y python3-pip && pip3 install vcstool
 
-            - name: Run make publish_all
+            - name: Run make build_all
               run: |
-                  make publish_all
+                  make build_all
 
-    build-and-publish-latest:
+    build-latest:
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -61,32 +62,6 @@ jobs:
             - name: Set GIT_TAG to latest
               run: echo "GIT_TAG=latest" >> $GITHUB_ENV
 
-            - name: Run make publish_all with latest tag
+            - name: Run make build_all with latest tag
               run: |
-                  make publish_all
-
-    create-manifest:
-        runs-on: ubuntu-latest
-        needs: [build-and-publish, build-and-publish-latest]
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
-
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v2
-
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v2
-
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v2
-              with:
-                  username: ${{ secrets.DOCKER_USERNAME }}
-                  password: ${{ secrets.DOCKER_PASSWORD }}
-
-            - name: Install vcs
-              run: sudo apt-get install -y python3-pip && pip3 install vcstool
-
-            - name: Run make manifest
-              run: |
-                  make manifest
+                  make build_all
