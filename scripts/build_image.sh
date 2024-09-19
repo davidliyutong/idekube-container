@@ -55,7 +55,7 @@ TAG=$DOCKER_BRANCH-$GIT_TAG
 IMAGE_REF=$REGISTRY/$AUTHOR/$NAME:$TAG-$ARCH
 
 # execute the command
-DOCKER_BUILD_ARGS=$(build_docker_args "envfile")
+DOCKER_BUILD_ARGS=$(build_docker_args ".dockerargs")
 DOCKER_BUILD_ARGS+=" --build-arg REGISTRY=$REGISTRY"
 DOCKER_BUILD_ARGS+=" --build-arg AUTHOR=$AUTHOR"
 DOCKER_BUILD_ARGS+=" --build-arg NAME=$NAME"

@@ -39,13 +39,14 @@ publish_all: build_all
     done
 
 manifest:
+	-docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)
 	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(IMAGES)
 	@for arch in $(ARCHS); \
 	do \
-		echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG) $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG)-$$arch; \
-		docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG) $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG)-$$arch; \
+		echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$$arch; \
+		docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$$arch; \
 	done
-	docker manifest push $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG)
+	docker manifest push $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)
 
 rmmanifest:
 	docker manifest rm $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG)
