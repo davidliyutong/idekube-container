@@ -33,7 +33,7 @@ jobs:
 
             - name: Run make build_all
               run: |
-                  make build_all
+                  APT_MIRROR=archive.ubuntu.com; make build_all
 
     build-latest:
         runs-on: ubuntu-latest
@@ -64,4 +64,4 @@ jobs:
 
             - name: Run make build_all with latest tag
               run: |
-                  make build_all
+                  APT_MIRROR=archive.ubuntu.com; make build_all

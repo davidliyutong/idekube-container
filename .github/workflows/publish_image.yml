@@ -32,7 +32,7 @@ jobs:
 
             - name: Run make publish_all
               run: |
-                  make publish_all
+                  APT_MIRROR=archive.ubuntu.com; make publish_all
 
     build-and-publish-latest:
         runs-on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
 
             - name: Run make publish_all with latest tag
               run: |
-                  make publish_all
+                  APT_MIRROR=archive.ubuntu.com; make publish_all
 
     create-manifest:
         runs-on: ubuntu-latest

@@ -8,14 +8,13 @@ BRANCH   ?= coder/base
 
 # Test variable
 GIT_TAG  ?= latest
-GIT_TAG  := $(shell git describe --tags --abbrev=2>/dev/null || echo $(GIT_TAG))
+GIT_TAG  := $(shell git describe --tags --abbrev=2 || echo $(GIT_TAG))
 TAG	     ?= $(subst /,-,$(BRANCH))-$(GIT_TAG)
-ARCH     := $(shell arch=$$(uname -m); if [[ $$arch == "x86_64" ]]; then echo amd64; else echo $$arch; fi)
+ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd64; else echo $$arch; fi)
 
 # CI/CD variable
 ARCHS    = amd64 arm64
-IMAGES   := $(ARCHS:%=$(REPO)$(NAME):$(TAG)-%)
-PLATFORMS := $$(first="True"; for a in $(ARCHS); do if [[ $$first == "True" ]]; then printf "linux/%s" $$a; first="False"; else printf ",linux/%s" $$a; fi; done)
+IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
 BRANCHES = coder/base coder/speit jupyter/base
 
 
@@ -33,12 +32,14 @@ publish: build
 
 publish_all: build_all
 	@for branch in $(BRANCHES); do \
-		echo "Publishing for branch $$branch"; \
-		docker push $(REGISTRY)/$(AUTHOR)/$(NAME):$(subst /,-,$$branch))-$(GIT_TAG)-$(ARCH); \
-	done
+        DOCKER_BRANCH=$$(echo $$branch | sed 's/\//-/g'); \
+        echo "Publishing for branch $$branch"; \
+        echo "docker push $(REGISTRY)/$(AUTHOR)/$(NAME):$$DOCKER_BRANCH-$(GIT_TAG)-$(ARCH)"; \
+        docker push $(REGISTRY)/$(AUTHOR)/$(NAME):$$DOCKER_BRANCH-$(GIT_TAG)-$(ARCH); \
+    done
 
 manifest:
-	docker manifest create $(REPO)$(NAME):$(TAG) $(IMAGES)
+	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(IMAGES)
 	@for arch in $(ARCHS); \
 	do \
 		echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG) $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG)-$$arch; \

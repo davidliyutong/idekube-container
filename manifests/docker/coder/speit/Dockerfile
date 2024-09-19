@@ -41,9 +41,9 @@ RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flath
 RUN . /opt/miniconda3/etc/profile.d/conda.sh && conda activate && \
     pip install -U pip && \
     pip config set global.index-url https://mirror.sjtu.edu.cn/pypi/web/simple && \
-    pip install sympy numpy matplotlib scipy scikit-learn networkx pandas pydot graphviz jupyter && \
-    pip install symbtools ipydex ipython && \
-    pip install pycartan
+    pip install --no-cache-dir sympy numpy matplotlib scipy scikit-learn networkx pandas pydot graphviz jupyter && \
+    pip install --no-cache-dir symbtools ipydex ipython && \
+    pip install --no-cache-dir pycartan
 
 ## Install iverilog
 COPY manifests/install-scripts/setup-iverilog.sh /tmp/setup-iverilog.sh
