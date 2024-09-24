@@ -6,7 +6,7 @@ ARG ARCH=amd64
 ARG MACHINE=x86_64
 
 # Avoid prompts for time zone
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=${TZ}
 # Fix issue with libGL on Windows
 ENV LIBGL_ALWAYS_INDIRECT=1
@@ -53,7 +53,7 @@ RUN useradd -m -s /bin/bash idekube \
 RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-${MACHINE}.sh -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
     && rm /tmp/miniconda.sh
-ENV PATH /opt/miniconda3/bin:$PATH
+ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Install Jupyter
 RUN python3 -m pip install --no-cache-dir jupyterlab

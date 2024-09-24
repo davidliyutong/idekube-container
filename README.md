@@ -67,3 +67,7 @@ The `artifacts/startup.sh` script is used to start the container. It configure t
 | `IDEKUBE_INGRESS_HOST`    | Ingress host, e.g. idekube.example.com                           | `localhost` |
 | `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <user_name>/, leave empty for `/`             | `""`        |
 | `IDEKUBE_INGRESS_SCHEME`  | Ingress scheme, e.g. http or https                               | `http`      |
+
+## Known Issues
+
+- For Kubernetes use, `nginx.org/websocket-services: "code-server"` annotation is required for the coder service to work properly, where code-server is the service name. Optional configurations are `nginx.org/proxy-read-timeout: "3600"` and `nginx.org/proxy-send-timeout: "3600"`.

@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 as system
+FROM ubuntu:20.04 AS system
 
 # These arguments are passed in via the docker build command
 ARG TZ=Asia/Shanghai
@@ -6,7 +6,7 @@ ARG ARCH=amd64
 ARG MACHINE=x86_64
 
 # Avoid prompts for time zone
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=${TZ}
 # Fix issue with libGL on Windows
 ENV LIBGL_ALWAYS_INDIRECT=1
@@ -20,7 +20,7 @@ RUN sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
 # built-in packages
 RUN apt-get update && apt-get install -y apt-utils wget curl jq zsh -y \
     && apt-get install -y --no-install-recommends --allow-unauthenticated supervisor sudo net-tools zenity xz-utils nginx \
-    dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libegl1-mesa libglu1-mesa libglu1 libxv1 \
+    dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libegl1-mesa libglu1-mesa libglu1 libxv1 libglm-dev \
     python3 python3-pip python3-setuptools python3-wheel python3-dev build-essential cmake \
     # x11vnc
     && apt-get install -y --no-install-recommends --allow-unauthenticated \
@@ -58,7 +58,7 @@ RUN mkdir /tmp/turbovnc/ && cd /tmp/turbovnc\
     && dpkg -i *.deb \
     && rm -rf /tmp/turbovnc \
     && sed -i 's/$host:/unix:/g' /opt/TurboVNC/bin/vncserver
-ENV PATH ${PATH}:/opt/VirtualGL/bin:/opt/TurboVNC/bin
+ENV PATH=${PATH}:/opt/VirtualGL/bin:/opt/TurboVNC/bin
 ENV VGL_DISPLAY=:1
 
 # noVNC
@@ -89,7 +89,7 @@ RUN useradd -m -s /bin/bash idekube \
 RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-${MACHINE}.sh -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
     && rm /tmp/miniconda.sh
-ENV PATH /opt/miniconda3/bin:$PATH
+ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Configure nginx server for noVNC
 # nginx workers
