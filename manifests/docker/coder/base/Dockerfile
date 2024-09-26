@@ -18,7 +18,7 @@ RUN sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
     sed -i s@/ports.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list
 
 # built-in packages
-RUN apt-get update && apt-get install -y apt-utils wget curl jq zsh -y \
+RUN apt-get update && apt-get install -y apt-utils wget curl jq zsh git -y \
     && apt-get install -y --no-install-recommends --allow-unauthenticated supervisor sudo net-tools zenity xz-utils nginx \
     dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libegl1-mesa libglu1-mesa libglu1 libxv1 libglm-dev \
     python3 python3-pip python3-setuptools python3-wheel python3-dev build-essential cmake \

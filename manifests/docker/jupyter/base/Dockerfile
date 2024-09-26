@@ -19,7 +19,7 @@ RUN sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
 
 # built-in packages
 RUN apt-get update && apt-get install apt-utils -y \
-    && apt-get install -y --no-install-recommends --allow-unauthenticated wget curl vim jq \
+    && apt-get install -y --no-install-recommends --allow-unauthenticated wget curl vim jq git \
     supervisor sudo net-tools zenity xz-utils nginx \
     python3 python3-pip python3-setuptools python3-wheel python3-dev build-essential cmake \
     # OpenSSH

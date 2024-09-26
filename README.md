@@ -4,6 +4,43 @@ This is a collection of dev containers for different use cases.
 
 Supported Architecture: `amd64`, `arm64`
 
+## Get Started
+
+This image is designed to be used in a Kubernetes cluster. The following is an example deployment:
+
+```yaml
+# TBD
+```
+
+However, it can also be used as a standalone container. The following is an example docker-compose file:
+
+```yaml
+services:
+  idekube_container:
+    image: davidliyutong/idekube-container:coder-base-v0.1.5
+    ports:
+      - "3000:80"
+    volumes:
+      - idekube_volume:/home/idekube
+      - <your_extra_data_path>:/mnt/data
+    environment:
+      IDEKUBE_INGRESS_HOST: "localhost:3000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    ipc: host
+
+volumes:
+  idekube_volume:
+    driver: local
+```
+
+> `IDEKUBE_INGRESS_HOST` is the host and port of the ingress controller. It is used to generate the correct URLs for the services.
+
 ## Usage
 
 ### novnc
