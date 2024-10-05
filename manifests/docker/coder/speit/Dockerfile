@@ -1,14 +1,14 @@
 # These arguments are passed in via the docker build command
-ARG BRANCH=unknwon
+ARG BRANCH=unknown
 ARG REGISTRY=docker.io
 ARG AUTHOR=davidliyutong
 ARG NAME=idekube-container
-ARG DOCKER_BRANCH=unknwon
-ARG GIT_TAG=unknwon
+ARG DOCKER_BRANCH=unknown
+ARG GIT_TAG=unknown
 ARG ARCH=amd64
 ARG MACHINE=x86_64
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG}-${ARCH} as system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG}-${ARCH} AS system
 
 # Install packages
 RUN apt-get update && apt-get install --fix-missing -y \
@@ -35,8 +35,6 @@ RUN apt-get update && apt-get install --fix-missing -y \
 # Install flatpak
 RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-
-# Prepare the miniconda installation
 # Configure Python environment
 RUN . /opt/miniconda3/etc/profile.d/conda.sh && conda activate && \
     pip install -U pip && \

@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 as system
+FROM ubuntu:20.04 AS system
 
 # These arguments are passed in via the docker build command
 ARG TZ=Asia/Shanghai
@@ -19,7 +19,7 @@ RUN sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
 
 # built-in packages
 RUN apt-get update && apt-get install apt-utils -y \
-    && apt-get install -y --no-install-recommends --allow-unauthenticated wget curl vim jq git \
+    && apt-get install -y --no-install-recommends --allow-unauthenticated wget curl vim jq git htop \
     supervisor sudo net-tools zenity xz-utils nginx \
     python3 python3-pip python3-setuptools python3-wheel python3-dev build-essential cmake \
     # OpenSSH
@@ -64,7 +64,6 @@ RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf
 
 # Setup the root filesystem
 COPY artifacts/jupyter/rootfs /
-COPY artifacts/startup.sh /startup.sh
 
 # Setting Environment Variables for startup.sh
 ENV SHELL=/bin/bash \

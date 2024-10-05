@@ -18,17 +18,16 @@ RUN sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
     sed -i s@/ports.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list
 
 # built-in packages
-RUN apt-get update && apt-get install -y apt-utils wget curl jq zsh git -y \
+RUN apt-get update && apt-get install -y apt-utils wget curl jq zsh git htop vim nano -y \
     && apt-get install -y --no-install-recommends --allow-unauthenticated supervisor sudo net-tools zenity xz-utils nginx \
     dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libegl1-mesa libglu1-mesa libglu1 libxv1 libglm-dev \
+    # build tools
     python3 python3-pip python3-setuptools python3-wheel python3-dev build-essential cmake \
-    # x11vnc
-    && apt-get install -y --no-install-recommends --allow-unauthenticated \
-    xvfb x11vnc xauth \
+    # fonts
     ttf-ubuntu-font-family ttf-wqy-zenhei \
     # Desktop
     && apt-get install -y --no-install-recommends --allow-unauthenticated \
-    lxde gtk2-engines-murrine gtk2-engines-pixbuf gtk2-engines-murrine arc-theme \
+    gtk2-engines-murrine gtk2-engines-pixbuf gtk2-engines-murrine arc-theme \
     # Firefox
     && apt-get install -y firefox libpci3 \
     # OpenSSH
@@ -45,19 +44,17 @@ RUN wget https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz -O v${T
     cd tini-${TINI_VERSION}; cmake . && make && make install \
     && cd ..; rm -r tini-${TINI_VERSION} v${TINI_VERSION}.tar.gz
 
-
 # Install TurboVNC and VirtualGL
-ARG SOURCEFORGE=https://sourceforge.net/projects
-ARG TURBOVNC_VERSION=3.0.3
-ARG VIRTUALGL_VERSION=3.0.1
-ARG LIBJPEG_VERSION=3.0.1
-RUN mkdir /tmp/turbovnc/ && cd /tmp/turbovnc\
-    && curl -fsSL -O ${SOURCEFORGE}/turbovnc/files/${TURBOVNC_VERSION}/turbovnc_${TURBOVNC_VERSION}_${ARCH}.deb \
-    -O ${SOURCEFORGE}/libjpeg-turbo/files/${LIBJPEG_VERSION}/libjpeg-turbo-official_${LIBJPEG_VERSION}_${ARCH}.deb \
-    -O ${SOURCEFORGE}/virtualgl/files/${VIRTUALGL_VERSION}/virtualgl_${VIRTUALGL_VERSION}_${ARCH}.deb \
-    && dpkg -i *.deb \
-    && rm -rf /tmp/turbovnc \
-    && sed -i 's/$host:/unix:/g' /opt/TurboVNC/bin/vncserver
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    gnupg apt-transport-https software-properties-common xvfb x11vnc xauth xorg tightvncserver xauth xfce4 xfce4-goodies
+RUN	wget -q -O- https://packagecloud.io/dcommander/virtualgl/gpgkey | gpg --dearmor >/etc/apt/trusted.gpg.d/VirtualGL.gpg && \
+    wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey |  gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg && \
+    wget https://raw.githubusercontent.com/VirtualGL/repo/main/VirtualGL.list -O /etc/apt/sources.list.d/TurboVNC.list && \
+    wget https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list -O /etc/apt/sources.list.d/VirtualGL.list
+RUN	apt-get update && \
+    apt-get install virtualgl -y && \
+    apt install turbovnc -y
 ENV PATH=${PATH}:/opt/VirtualGL/bin:/opt/TurboVNC/bin
 ENV VGL_DISPLAY=:1
 
@@ -97,7 +94,6 @@ RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf
 
 # Setup the root filesystem
 COPY artifacts/coder/rootfs /
-COPY artifacts/startup.sh /startup.sh
 
 # Setting Environment Variables for startup.sh
 ENV SHELL=/bin/bash \

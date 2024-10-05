@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script type="text/javascript">
+        const port = window.location.port ? `:${window.location.port}` : '';
+        const redirectUrl = `${window.location.protocol}//${window.location.hostname}${port}{{ IDEKUBE_INGRESS_PATH }}/novnc/vnc.html?autoconnect=1&path={{ IDEKUBE_INGRESS_PATH }}/novnc/websockify&scale=scale`;
+        window.location.href = redirectUrl;
+        console.log('Redirecting to:', redirectUrl);
+    </script>
+</head>
+<body>
+    If you are not redirected automatically, follow this <a id="redirect-link" href="#">link</a>.
+    <script type="text/javascript">
+        document.getElementById('redirect-link').href = redirectUrl;
+    </script>
+</body>
+</html>

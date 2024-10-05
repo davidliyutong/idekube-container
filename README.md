@@ -93,7 +93,7 @@ There are two flavors: `coder` with novnc support and `jupyter` without novnc su
 
 The container runs a `supervisord` process that starts services. A nginx server is used to reverse proxy the services.
 
-The `artifacts/startup.sh` script is used to start the container. It configure the container according to environment variables and starts the `supervisord` process.
+The `artifacts/$flavor/startup.sh` script is used to start the container. It configure the container according to environment variables and starts the `supervisord` process.
 
 | Name                      | Description                                                      | Default     |
 | ------------------------- | ---------------------------------------------------------------- | ----------- |
