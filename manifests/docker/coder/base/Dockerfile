@@ -3,9 +3,8 @@ FROM ubuntu:20.04 AS system
 
 # These arguments are passed in via the docker build command
 ARG TZ=Asia/Shanghai \
-    ARCH=amd64 \
-    MACHINE=x86_64 \
     APT_MIRROR="mirror.sjtu.edu.cn" \
+    USE_APT_MIRROR="false" \
     TINI_VERSION=0.19.0 \
     WEBSOCAT_VERSION=1.13.0 \
     CODER_VERSION=4.7.0 \
@@ -17,10 +16,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TZ=${TZ}
 
 # Change APT Source
-RUN sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
-    sed -i s@/security.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
-    sed -i s@/ports.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list
-
+RUN if [ ${USE_APT_MIRROR} != "false" ]; then \
+        sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
+        sed -i s@/security.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
+        sed -i s@/ports.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list; \
+    fi;
 # built-in packages
 RUN apt-get update \
     && apt-get install -y \
@@ -44,20 +44,27 @@ RUN wget https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz -O v${T
     && cd ..; rm -r tini-${TINI_VERSION} v${TINI_VERSION}.tar.gz
 
 # Setup the websocat and ssh
-RUN wget https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.${MACHINE}-unknown-linux-musl -O /usr/local/bin/websocat \
+RUN arch=$(uname -m); \
+    if [ "$arch" = "arm64" ]; then arch="aarch64"; fi; \
+    wget https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.$arch-unknown-linux-musl -O /usr/local/bin/websocat \
     && chmod +x /usr/local/bin/websocat
 RUN mkdir -p /run/sshd && echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
 
 # Setup the code-server
-RUN wget https://github.com/cdr/code-server/releases/download/v${CODER_VERSION}/code-server-${CODER_VERSION}-linux-${ARCH}.tar.gz -O /tmp/code-server.tar.gz \
+RUN arch=$(uname -m); \
+    if [ "$arch" = "x86_64" ]; then arch="amd64"; fi; \
+    if [ "$arch" = "aarch64" ]; then arch="arm64"; fi; \
+    wget https://github.com/cdr/code-server/releases/download/v${CODER_VERSION}/code-server-${CODER_VERSION}-linux-$arch.tar.gz -O /tmp/code-server.tar.gz \
     && mkdir -p /usr/lib/code-server && tar -zxf /tmp/code-server.tar.gz -C /usr/lib/code-server --strip-components=1 \
     && ln -s /usr/lib/code-server/bin/code-server /usr/local/bin/code-server \
     && rm /tmp/code-server.tar.gz
 
 # Install Miniconda
-RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-${MACHINE}.sh -O /tmp/miniconda.sh \
-&& /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
-&& rm /tmp/miniconda.sh
+RUN arch=$(uname -m); \
+    if [ "$arch" = "arm64" ]; then arch="aarch64"; fi; \
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-$arch.sh -O /tmp/miniconda.sh \
+    && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
+    && rm /tmp/miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Desktop

@@ -4,11 +4,9 @@ ARG BRANCH=unknown \
     AUTHOR=davidliyutong \
     NAME=idekube-container \
     DOCKER_BRANCH=unknown \
-    GIT_TAG=unknown \
-    ARCH=amd64 \
-    MACHINE=x86_64
+    GIT_TAG=unknown
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG}-${ARCH} AS system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG} AS system
 
 # Install packages
 RUN apt-get update && apt-get install --fix-missing -y \

@@ -4,11 +4,9 @@ ARG BRANCH=unknown \
     AUTHOR=davidliyutong \
     NAME=idekube-container \
     DOCKER_BRANCH=unknown \
-    GIT_TAG=unknown \
-    ARCH=amd64 \
-    MACHINE=x86_64
+    GIT_TAG=unknown
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG}-${ARCH} AS system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG} AS system
 
 ENV PYTHONIOENCODING=utf-8
 ARG DOCKER_CHANNEL=stable \

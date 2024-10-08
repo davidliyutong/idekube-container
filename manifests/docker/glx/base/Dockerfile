@@ -3,8 +3,6 @@ FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04 AS system
 
 # These arguments are passed in via the docker build command
 ARG TZ=Asia/Shanghai \
-    ARCH=amd64 \
-    MACHINE=x86_64 \
     APT_MIRROR="mirror.sjtu.edu.cn" \
     TINI_VERSION=0.19.0 \
     WEBSOCAT_VERSION=1.13.0 \

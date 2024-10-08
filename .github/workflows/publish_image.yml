@@ -26,30 +26,4 @@ jobs:
 
             - name: Run make publish_all
               run: |
-                  APT_MIRROR=archive.ubuntu.com; make publish_all
-
-    create-manifest:
-        runs-on: ubuntu-latest
-        needs: [build-and-publish, build-and-publish-latest]
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
-
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v2
-
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v2
-
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v2
-              with:
-                  username: ${{ secrets.DOCKER_USERNAME }}
-                  password: ${{ secrets.DOCKER_PASSWORD }}
-
-            - name: Install vcs
-              run: sudo apt-get install -y python3-pip && pip3 install vcstool
-
-            - name: Run make manifest
-              run: |
-                  make manifest
+                  export USE_APT_MIRROR=false; make publishx_all

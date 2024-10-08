@@ -15,7 +15,7 @@ ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd
 # CI/CD variable
 ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
-BRANCHES = coder/base coder/speit coder/dind jupyter/base
+BRANCHES = coder/base coder/speit coder/dind jupyter/base # order is important
 
 
 build: pull_deps
@@ -25,6 +25,15 @@ build_all: pull_deps
 	@for branch in $(BRANCHES); do \
 		echo "Building for branch $$branch"; \
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/build_image.sh; \
+	done
+
+buildx: pull_deps
+	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/buildx_image.sh
+
+buildx_all: pull_deps
+	@for branch in $(BRANCHES); do \
+		echo "Building for branch $$branch"; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/buildx_image.sh; \
 	done
 
 publish: build
@@ -38,6 +47,15 @@ publish_all: build_all
         docker push $(REGISTRY)/$(AUTHOR)/$(NAME):$$DOCKER_BRANCH-$(GIT_TAG)-$(ARCH); \
     done
 
+publishx: pull_deps
+	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/publishx_image.sh
+
+publishx_all: pull_deps
+	@for branch in $(BRANCHES); do \
+		echo "Publishing for branch $$branch"; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/publishx_image.sh; \
+	done
+
 manifest:
 	-docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)
 	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(IMAGES)
@@ -50,11 +68,9 @@ manifest:
 
 rmmanifest:
 	docker manifest rm $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG)
+
 run:
 	docker run --name idekube-container -it --rm -p 8080:80 -p 8888:8888 -e IDEKUBE_INGRESS_HOST=localhost:8080 -e IDEKUBE_INGRESS_PATH=/davidliyutong -e IDEKUBE_INIT_HOME=true $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
-
-manifests:
-	@export BRANCH=${BRANCH} IMAGE_REF=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}; bash scripts/generate_manifests.sh
 
 debug: build run
 
