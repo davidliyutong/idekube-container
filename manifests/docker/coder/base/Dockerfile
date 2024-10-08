@@ -4,7 +4,7 @@ FROM ubuntu:20.04 AS system
 # These arguments are passed in via the docker build command
 ARG TZ=Asia/Shanghai \
     APT_MIRROR="mirror.sjtu.edu.cn" \
-    USE_APT_MIRROR="false" \
+    USE_APT_MIRROR="true" \
     TINI_VERSION=0.19.0 \
     WEBSOCAT_VERSION=1.13.0 \
     CODER_VERSION=4.7.0 \
@@ -37,7 +37,7 @@ RUN apt-get update \
     && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # tini to fix subreap
-RUN wget https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz -O v${TINI_VERSION}.tar.gz  \
+RUN wget -q https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz -O v${TINI_VERSION}.tar.gz  \
     && tar zxf v${TINI_VERSION}.tar.gz \
     && export CFLAGS="-DPR_SET_CHILD_SUBREAPER=36 -DPR_GET_CHILD_SUBREAPER=37"; \
     cd tini-${TINI_VERSION}; cmake . && make && make install \
@@ -46,7 +46,7 @@ RUN wget https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz -O v${T
 # Setup the websocat and ssh
 RUN arch=$(uname -m); \
     if [ "$arch" = "arm64" ]; then arch="aarch64"; fi; \
-    wget https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.$arch-unknown-linux-musl -O /usr/local/bin/websocat \
+    wget -q https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.$arch-unknown-linux-musl -O /usr/local/bin/websocat \
     && chmod +x /usr/local/bin/websocat
 RUN mkdir -p /run/sshd && echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
 
@@ -54,7 +54,7 @@ RUN mkdir -p /run/sshd && echo "PasswordAuthentication no" >> /etc/ssh/sshd_conf
 RUN arch=$(uname -m); \
     if [ "$arch" = "x86_64" ]; then arch="amd64"; fi; \
     if [ "$arch" = "aarch64" ]; then arch="arm64"; fi; \
-    wget https://github.com/cdr/code-server/releases/download/v${CODER_VERSION}/code-server-${CODER_VERSION}-linux-$arch.tar.gz -O /tmp/code-server.tar.gz \
+    wget -q https://github.com/cdr/code-server/releases/download/v${CODER_VERSION}/code-server-${CODER_VERSION}-linux-$arch.tar.gz -O /tmp/code-server.tar.gz \
     && mkdir -p /usr/lib/code-server && tar -zxf /tmp/code-server.tar.gz -C /usr/lib/code-server --strip-components=1 \
     && ln -s /usr/lib/code-server/bin/code-server /usr/local/bin/code-server \
     && rm /tmp/code-server.tar.gz
@@ -62,7 +62,7 @@ RUN arch=$(uname -m); \
 # Install Miniconda
 RUN arch=$(uname -m); \
     if [ "$arch" = "arm64" ]; then arch="aarch64"; fi; \
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-$arch.sh -O /tmp/miniconda.sh \
+    wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-$arch.sh -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
     && rm /tmp/miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH
@@ -79,8 +79,8 @@ RUN apt-get update \
 # Install TurboVNC and VirtualGL
 RUN	wget -q -O- https://packagecloud.io/dcommander/virtualgl/gpgkey | gpg --dearmor >/etc/apt/trusted.gpg.d/VirtualGL.gpg && \
     wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey |  gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg && \
-    wget https://raw.githubusercontent.com/VirtualGL/repo/main/VirtualGL.list -O /etc/apt/sources.list.d/TurboVNC.list && \
-    wget https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list -O /etc/apt/sources.list.d/VirtualGL.list
+    wget -q https://raw.githubusercontent.com/VirtualGL/repo/main/VirtualGL.list -O /etc/apt/sources.list.d/TurboVNC.list && \
+    wget -q https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list -O /etc/apt/sources.list.d/VirtualGL.list
 RUN	apt-get update && apt-get install virtualgl -y && apt install turbovnc -y \
     && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 ENV PATH=${PATH}:/opt/VirtualGL/bin:/opt/TurboVNC/bin

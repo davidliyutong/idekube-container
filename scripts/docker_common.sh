@@ -25,6 +25,9 @@ REGISTRY=${REGISTRY:-"docker.io"}
 AUTHOR=${AUTHOR:-"davidliyutong"}
 NAME=${NAME:-"idekube-container"}
 APT_MIRROR=${APT_MIRROR:-"mirror.sjtu.edu.cn"}
+USE_APT_MIRROR=${USE_APT_MIRROR:-"true"}
+PIP_MIRROR_URL=${PIP_MIRROR_URL:-"https://mirror.sjtu.edu.cn/pypi/web/simpl"}
+USE_PIP_MIRROR=${USE_PIP_MIRROR:-"true"}
 if [[ -z $BRANCH ]]; then
   echo "BRANCH is not set"
   exit 1
@@ -45,6 +48,8 @@ DOCKER_BUILD_ARGS+=" --build-arg AUTHOR=$AUTHOR"
 DOCKER_BUILD_ARGS+=" --build-arg NAME=$NAME"
 DOCKER_BUILD_ARGS+=" --build-arg DOCKER_BRANCH=$DOCKER_BRANCH"
 DOCKER_BUILD_ARGS+=" --build-arg GIT_TAG=$GIT_TAG"
-DOCKER_BUILD_ARGS+=" --build-arg ARCH=$ARCH"
-DOCKER_BUILD_ARGS+=" --build-arg MACHINE=$MACHINE"
 DOCKER_BUILD_ARGS+=" --build-arg APT_MIRROR=$APT_MIRROR"
+DOCKER_BUILD_ARGS+=" --build-arg USE_APT_MIRROR=$USE_APT_MIRROR"
+DOCKER_BUILD_ARGS+=" --build-arg PIP_MIRROR_URL=$PIP_MIRROR_URL"
+DOCKER_BUILD_ARGS+=" --build-arg USE_PIP_MIRROR=$USE_PIP_MIRROR"
+

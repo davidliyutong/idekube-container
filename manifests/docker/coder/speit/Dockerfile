@@ -4,7 +4,9 @@ ARG BRANCH=unknown \
     AUTHOR=davidliyutong \
     NAME=idekube-container \
     DOCKER_BRANCH=unknown \
-    GIT_TAG=unknown
+    GIT_TAG=unknown \
+    PIP_MIRROR_URL="https://mirror.sjtu.edu.cn/pypi/web/simple" \
+    USE_PIP_MIRROR="true"
 
 FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG} AS system
 
@@ -27,10 +29,13 @@ RUN apt-get update && apt-get install --fix-missing -y \
 # Install flatpak
 RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
+# Configure Python Mirror
+RUN if [ ${USE_PIP_MIRROR} != "false" ]; then \
+        pip config set global.index-url ${PIP_MIRROR_URL}; \
+    fi;
 # Configure Python environment
 RUN . /opt/miniconda3/etc/profile.d/conda.sh && conda activate && \
     pip install -U pip && \
-    pip config set global.index-url https://mirror.sjtu.edu.cn/pypi/web/simple && \
     pip install --no-cache-dir sympy numpy matplotlib scipy scikit-learn networkx pandas pydot graphviz jupyter && \
     pip install --no-cache-dir symbtools ipydex ipython && \
     pip install --no-cache-dir pycartan

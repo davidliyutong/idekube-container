@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install apt-utils -y \
     && rm -rf /var/lib/apt/lists/*
 
 # tini to fix subreap
-RUN wget https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz -O v${TINI_VERSION}.tar.gz  \
+RUN wget -q https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz -O v${TINI_VERSION}.tar.gz  \
     && tar zxf v${TINI_VERSION}.tar.gz \
     && export CFLAGS="-DPR_SET_CHILD_SUBREAPER=36 -DPR_GET_CHILD_SUBREAPER=37"; \
     cd tini-${TINI_VERSION}; cmake . && make && make install \
@@ -39,14 +39,14 @@ RUN wget https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz -O v${T
 # Setup the websocat and ssh
 RUN arch=$(uname -m); \
     if [ "$arch" = "arm64" ]; then arch="aarch64"; fi; \
-    wget https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.$arch-unknown-linux-musl -O /usr/local/bin/websocat \
+    wget -q https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.$arch-unknown-linux-musl -O /usr/local/bin/websocat \
     && chmod +x /usr/local/bin/websocat
 RUN mkdir -p /run/sshd && echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
 
 # Install Miniconda
 RUN arch=$(uname -m); \
     if [ "$arch" = "arm64" ]; then arch="aarch64"; fi; \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-$arch.sh -O /tmp/miniconda.sh \
+    wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-$arch.sh -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
     && rm /tmp/miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH

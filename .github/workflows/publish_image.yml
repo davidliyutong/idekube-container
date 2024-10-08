@@ -26,4 +26,4 @@ jobs:
 
             - name: Run make publish_all
               run: |
-                  export USE_APT_MIRROR=false; make publishx_all
+                  make publish_github_action

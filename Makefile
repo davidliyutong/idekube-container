@@ -56,6 +56,9 @@ publishx_all: pull_deps
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/publishx_image.sh; \
 	done
 
+publish_github_action:
+	export USE_APT_MIRROR=false USE_PIP_MIRROR=false; make publishx_all
+
 manifest:
 	-docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)
 	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(IMAGES)

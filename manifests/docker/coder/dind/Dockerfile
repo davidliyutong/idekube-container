@@ -34,10 +34,10 @@ RUN arch="$(uname -m)"; \
         aarch64) dockerArch='aarch64' ; buildx_arch='linux-arm64' ;; \
         *) echo >&2 "error: unsupported architecture ($arch)"; exit 1 ;; \
     esac && \
-    wget -O docker.tgz "https://download.docker.com/linux/static/${DOCKER_CHANNEL}/${dockerArch}/docker-${DOCKER_VERSION}.tgz" && \
+    wget -qO docker.tgz "https://download.docker.com/linux/static/${DOCKER_CHANNEL}/${dockerArch}/docker-${DOCKER_VERSION}.tgz" && \
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
     rm docker.tgz && \
-    wget -O docker-buildx "https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.${buildx_arch}" && \
+    wget -qO docker-buildx "https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.${buildx_arch}" && \
     mkdir -p /usr/local/lib/docker/cli-plugins && \
     chmod +x docker-buildx && \
     mv docker-buildx /usr/local/lib/docker/cli-plugins/docker-buildx && \
