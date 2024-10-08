@@ -1,12 +1,12 @@
 # These arguments are passed in via the docker build command
-ARG BRANCH=unknown
-ARG REGISTRY=docker.io
-ARG AUTHOR=davidliyutong
-ARG NAME=idekube-container
-ARG DOCKER_BRANCH=unknown
-ARG GIT_TAG=unknown
-ARG ARCH=amd64
-ARG MACHINE=x86_64
+ARG BRANCH=unknown \
+    REGISTRY=docker.io \
+    AUTHOR=davidliyutong \
+    NAME=idekube-container \
+    DOCKER_BRANCH=unknown \
+    GIT_TAG=unknown \
+    ARCH=amd64 \
+    MACHINE=x86_64
 
 FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG}-${ARCH} AS system
 

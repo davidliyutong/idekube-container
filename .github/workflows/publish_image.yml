@@ -10,7 +10,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                arch: [amd64, arm64]
+                arch: [amd64]
         steps:
             - name: Checkout repository
               uses: actions/checkout@v2
@@ -25,31 +25,6 @@ jobs:
               run: sudo apt-get install -y python3-pip && pip3 install vcstool
 
             - name: Run make publish_all
-              run: |
-                  APT_MIRROR=archive.ubuntu.com; make publish_all
-
-    build-and-publish-latest:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                arch: [amd64, arm64]
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
-
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v2
-              with:
-                  username: ${{ secrets.DOCKER_USERNAME }}
-                  password: ${{ secrets.DOCKER_PASSWORD }}
-
-            - name: Install vcs
-              run: sudo apt-get install -y python3-pip && pip3 install vcstool
-
-            - name: Set GIT_TAG to latest
-              run: echo "GIT_TAG=latest" >> $GITHUB_ENV
-
-            - name: Run make publish_all with latest tag
               run: |
                   APT_MIRROR=archive.ubuntu.com; make publish_all
 

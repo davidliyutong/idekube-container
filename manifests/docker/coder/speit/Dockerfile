@@ -1,36 +1,30 @@
 # These arguments are passed in via the docker build command
-ARG BRANCH=unknown
-ARG REGISTRY=docker.io
-ARG AUTHOR=davidliyutong
-ARG NAME=idekube-container
-ARG DOCKER_BRANCH=unknown
-ARG GIT_TAG=unknown
-ARG ARCH=amd64
-ARG MACHINE=x86_64
+ARG BRANCH=unknown \
+    REGISTRY=docker.io \
+    AUTHOR=davidliyutong \
+    NAME=idekube-container \
+    DOCKER_BRANCH=unknown \
+    GIT_TAG=unknown \
+    ARCH=amd64 \
+    MACHINE=x86_64
 
 FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG}-${ARCH} AS system
 
 # Install packages
 RUN apt-get update && apt-get install --fix-missing -y \
-    python3 python3-pip \
-    git htop vim wget curl tree zsh bison\
     tmate tmux \
-    unzip zstd \
     net-tools traceroute dnsutils iputils-ping \
-    htop \
     lldb build-essential gdb clang gcc gperf \
     graphviz ghdl openjdk-8-jre libncurses5-dev libreadline-dev flex \
     cmake ninja-build meson autoconf \
-    jq \
-    openssh-client openssh-server \
-    openssh-server \
     flatpak \
     rsync \
-    supervisor \
     wxmaxima \
     && apt-get autoclean -y \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
+
+# WARNING: --security-opt seccomp=unconfined is required for maxima
 
 # Install flatpak
 RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo

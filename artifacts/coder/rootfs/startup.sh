@@ -7,17 +7,9 @@ else
     HOME=/root
 fi
 
-# ------------------------------------------------------
-# home folder configuration
-# ------------------------------------------------------
-IDEKUBE_DESKTOP=${IDEKUBE_DESKTOP:-"false"}
-if $IDEKUBE_DESKTOP; then
-    if [ ! -d "$HOME/.config/pcmanfm/LXDE/" ]; then
-        mkdir -p $HOME/.config/pcmanfm/LXDE/
-        ln -sf /usr/local/share/doro-lxde-wallpapers/desktop-items-0.conf $HOME/.config/pcmanfm/LXDE/
-        chown -R $USER:$USER $HOME
-    fi
-fi
+# Remove any existing lock files
+rm -f /tmp/.X*-lock
+rm -f /tmp/.X11-unix/X*
 
 # ------------------------------------------------------
 # response to IDEKUBE_PREFERED_SHELL
