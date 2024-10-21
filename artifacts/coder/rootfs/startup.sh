@@ -23,6 +23,19 @@ else
 fi
 
 # ------------------------------------------------------
+# Detect all startup bash scripts and run them
+# ------------------------------------------------------
+# Find all scripts in /etc/idekube/, sort them by name
+scripts=$(find /etc/idekube/startup.bash/ -type f -name "*.sh" | sort)
+
+# Loop over the scripts and execute them
+for script in $scripts
+do
+    echo "Executing $script"
+    bash $script
+done
+
+# ------------------------------------------------------
 IDEKUBE_INIT_HOME=${IDEKUBE_INIT_HOME:-"false"}
 if $IDEKUBE_INIT_HOME; then
     echo "Initializing home folder"
@@ -50,9 +63,6 @@ chown -R $USER:$USER $HOME/.ssh/authorized_keys
 # ------------------------------------------------------
 # response to IDEKUBE_INGRESS
 # ------------------------------------------------------
-if [ -z "$IDEKUBE_INGRESS_HOST" ]; then
-    IDEKUBE_INGRESS_HOST="localhost"
-fi
 if [ -z "$IDEKUBE_INGRESS_PATH" ]; then
     IDEKUBE_INGRESS_PATH=""
 fi
@@ -63,15 +73,13 @@ fi
 # ------------------------------------------------------
 # Modify Nginx Config file according to IDEKUBE_INGRESS
 # ------------------------------------------------------
-echo "Configuring Nginx for $IDEKUBE_INGRESS_SCHEME://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH"
-sed -i "s|{{ IDEKUBE_INGRESS_HOST }}|$IDEKUBE_INGRESS_HOST|g" /etc/nginx/sites-enabled/default
+echo "Configuring Nginx for $IDEKUBE_INGRESS_SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH"
 sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/nginx/sites-enabled/default
 
 # ------------------------------------------------------
 # Modify supervisord config file according to IDEKUBE_INGRESS
 # ------------------------------------------------------
-echo "Configuring Supervisord for $IDEKUBE_INGRESS_SCHEME://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH"
-sed -i "s|{{ IDEKUBE_INGRESS_HOST }}|$IDEKUBE_INGRESS_HOST|g" /etc/supervisor/supervisord.conf
+echo "Configuring Supervisord for $IDEKUBE_INGRESS_SCHEME://INGRESS_HOST/$IDEKUBE_INGRESS_PATH"
 sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/supervisor/supervisord.conf
 sed -i "s|{{ IDEKUBE_INGRESS_SCHEME }}|$IDEKUBE_INGRESS_SCHEME|g" /etc/supervisor/supervisord.conf
 
@@ -79,7 +87,7 @@ sed -i "s|{{ IDEKUBE_INGRESS_SCHEME }}|$IDEKUBE_INGRESS_SCHEME|g" /etc/superviso
 # ------------------------------------------------------
 # Modify /var/lib/novnc/index.html according to IDEKUBE_INGRESS
 # ------------------------------------------------------
-echo "Configuring noVNC for $IDEKUBE_INGRESS_SCHEME://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH"
+echo "Configuring noVNC for $IDEKUBE_INGRESS_SCHEME://INGRESS_HOST/$IDEKUBE_INGRESS_PATH"
 sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /var/lib/novnc/index.html
 
 exec /usr/local/bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf
