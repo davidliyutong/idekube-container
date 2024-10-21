@@ -23,8 +23,6 @@ services:
     volumes:
       - idekube_volume:/home/idekube
       - <your_extra_data_path>:/mnt/data
-    environment:
-      IDEKUBE_INGRESS_HOST: "localhost:3000"
     deploy:
       resources:
         reservations:
@@ -39,28 +37,26 @@ volumes:
     driver: local
 ```
 
-> `IDEKUBE_INGRESS_HOST` is the host and port of the ingress controller. It is used to generate the correct URLs for the services.
-
 ## Usage
 
 ### novnc
 
-Visit `$IDEKUBE_INGRESS_SCHEME://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH/novnc/` in your browser.
+Visit `$IDEKUBE_INGRESS_SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/novnc/` in your browser.
 
 ### coder
 
-Visit `$IDEKUBE_INGRESS_SCHEME://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH/coder/` in your browser.
+Visit `$IDEKUBE_INGRESS_SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/coder/` in your browser.
 
 ### jupyter
 
-Visit `$IDEKUBE_INGRESS_SCHEME://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH/jupyter/` in your browser.
+Visit `$IDEKUBE_INGRESS_SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/jupyter/` in your browser.
 
 ### SSH
 
 The ssh is proxied through the nginx server via websocat. Use the following command to connect to the container:
 
 ```bash
-ssh -o ProxyCommand="websocat --binary ws://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/" idekube@idekube
+ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/" idekube@idekube
 ```
 
 Or use this ssh config snippet:
@@ -68,7 +64,7 @@ Or use this ssh config snippet:
 ```ssh-config
 Host idekube
   User idekube
-  ProxyCommand websocat --binary ws://$IDEKUBE_INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/
+  ProxyCommand websocat --binary ws://INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/
 ```
 
 ## Build the container
@@ -101,7 +97,6 @@ The `artifacts/$flavor/startup.sh` script is used to start the container. It con
 | `IDEKUBE_INIT_HOME`       | `true` if need to init home with /usr/local/share/home_template/ | `false`     |
 | `IDEKUBE_PREFERED_SHELL`  | path to shell                                                    | `/bin/bash` |
 | `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                                   | `""`        |
-| `IDEKUBE_INGRESS_HOST`    | Ingress host, e.g. idekube.example.com                           | `localhost` |
 | `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <user_name>/, leave empty for `/`             | `""`        |
 | `IDEKUBE_INGRESS_SCHEME`  | Ingress scheme, e.g. http or https                               | `http`      |
 

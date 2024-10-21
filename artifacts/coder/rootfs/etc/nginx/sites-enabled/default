@@ -3,10 +3,6 @@ server {
     listen [::]:80;
 
 
-    # location = {{ IDEKUBE_INGRESS_PATH }}/novnc/ {
-    #     return 301 $scheme://{{ IDEKUBE_INGRESS_HOST }}{{ IDEKUBE_INGRESS_PATH }}/novnc/vnc.html?autoconnect=1&path={{ IDEKUBE_INGRESS_PATH }}/novnc/websockify&scale=scale;
-    # }
-
     location ~ ^{{ IDEKUBE_INGRESS_PATH }}/novnc/(.*)$ {
         proxy_pass http://localhost:6081/$1;
     }

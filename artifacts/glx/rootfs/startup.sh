@@ -4,7 +4,17 @@
 rm -f /tmp/.X*-lock
 rm -f /tmp/.X11-unix/X*
 
-exec /usr/local/bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf
+# ------------------------------------------------------
+# Detect all startup bash scripts and run them
+# ------------------------------------------------------
+# Find all scripts in /etc/idekube/, sort them by name
+scripts=$(find /etc/idekube/startup.bash/ -type f -name "*.sh" | sort)
 
-# vncserver :1 -geometry 1280x800 -depth 24 -SecurityTypes None
-# exec "$@"
+# Loop over the scripts and execute them
+for script in $scripts
+do
+    echo "Executing $script"
+    bash $script
+done
+
+exec /usr/local/bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf

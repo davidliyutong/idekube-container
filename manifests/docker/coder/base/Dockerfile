@@ -64,7 +64,9 @@ RUN arch=$(uname -m); \
     if [ "$arch" = "arm64" ]; then arch="aarch64"; fi; \
     wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-$arch.sh -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
-    && rm /tmp/miniconda.sh
+    && rm /tmp/miniconda.sh \
+    && source /opt/miniconda3/etc/profile.d/conda.sh \
+    && conda init --system bash
 ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Desktop
