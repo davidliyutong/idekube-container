@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 AS system
+FROM ubuntu:24.04 AS system
 
 # These arguments are passed in via the docker build command
 ARG TZ=Asia/Shanghai \
@@ -53,6 +53,7 @@ ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Install Jupyter
 RUN python3 -m pip install --no-cache-dir jupyterlab
+
 # Configure nginx server for container
 RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf
 

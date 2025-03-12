@@ -15,14 +15,15 @@ ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd
 # CI/CD variable
 ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
-BRANCHES = coder/base coder/speit coder/dind jupyter/base # order is important
+BRANCHES = coder/base coder/speit coder/dind coder/isaac jupyter/base # order is important
 
 
 build: pull_deps
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/build_image.sh
 
 build_all: pull_deps
-	@for branch in $(BRANCHES); do \
+	@set -e; \
+	for branch in $(BRANCHES); do \
 		echo "Building for branch $$branch"; \
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/build_image.sh; \
 	done
@@ -31,7 +32,8 @@ buildx: pull_deps
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/buildx_image.sh
 
 buildx_all: pull_deps
-	@for branch in $(BRANCHES); do \
+	@set -e; \
+	for branch in $(BRANCHES); do \
 		echo "Building for branch $$branch"; \
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/buildx_image.sh; \
 	done
@@ -40,7 +42,8 @@ publish: build
 	docker push $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$(ARCH)
 
 publish_all: build_all
-	@for branch in $(BRANCHES); do \
+	@set -e; \
+	for branch in $(BRANCHES); do \
         DOCKER_BRANCH=$$(echo $$branch | sed 's/\//-/g'); \
         echo "Publishing for branch $$branch"; \
         echo "docker push $(REGISTRY)/$(AUTHOR)/$(NAME):$$DOCKER_BRANCH-$(GIT_TAG)-$(ARCH)"; \
@@ -51,7 +54,8 @@ publishx: pull_deps
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/publishx_image.sh
 
 publishx_all: pull_deps
-	@for branch in $(BRANCHES); do \
+	@set -e; \
+	for branch in $(BRANCHES); do \
 		echo "Publishing for branch $$branch"; \
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/publishx_image.sh; \
 	done

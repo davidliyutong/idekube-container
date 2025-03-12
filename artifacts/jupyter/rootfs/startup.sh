@@ -19,23 +19,12 @@ else
 fi
 
 # ------------------------------------------------------
-# Detect all startup bash scripts and run them
-# ------------------------------------------------------
-# Find all scripts in /etc/idekube/, sort them by name
-scripts=$(find /etc/idekube/startup.bash/ -type f -name "*.sh" | sort)
-
-# Loop over the scripts and execute them
-for script in $scripts
-do
-    echo "Executing $script"
-    bash $script
-done
-
+# response to IDEKUBE_INIT_HOME
 # ------------------------------------------------------
 IDEKUBE_INIT_HOME=${IDEKUBE_INIT_HOME:-"false"}
-if $IDEKUBE_INIT_HOME; then
+if [ "$IDEKUBE_INIT_HOME" = "true" ]; then
     echo "Initializing home folder"
-    rsync -r /usr/local/share/home_template/*. $HOME/
+    rsync -r /etc/skel/*. $HOME/
     chown -R $USER:$USER $HOME
 else
     echo "Skipping home folder initialization"
@@ -62,22 +51,30 @@ chown -R $USER:$USER $HOME/.ssh/authorized_keys
 if [ -z "$IDEKUBE_INGRESS_PATH" ]; then
     IDEKUBE_INGRESS_PATH=""
 fi
-if [ -z "$IDEKUBE_INGRESS_SCHEME" ]; then
-    IDEKUBE_INGRESS_SCHEME="http"
-fi
 
 # ------------------------------------------------------
 # Modify Nginx Config file according to IDEKUBE_INGRESS
 # ------------------------------------------------------
-echo "Configuring Nginx for $IDEKUBE_INGRESS_SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH"
+echo "Configuring Nginx for INGRESS_HOST$IDEKUBE_INGRESS_PATH"
 sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/nginx/sites-enabled/default
 
 # ------------------------------------------------------
 # Modify supervisord config file according to IDEKUBE_INGRESS
 # ------------------------------------------------------
-echo "Configuring Supervisord for $IDEKUBE_INGRESS_SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH"
-sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/supervisor/supervisord.conf
-sed -i "s|{{ IDEKUBE_INGRESS_SCHEME }}|$IDEKUBE_INGRESS_SCHEME|g" /etc/supervisor/supervisord.conf
+echo "Configuring Supervisord for INGRESS_HOST$IDEKUBE_INGRESS_PATH"
+sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/supervisor/conf.d/supervisord.conf
 
+# ------------------------------------------------------
+# Detect all startup bash scripts and run them
+# ------------------------------------------------------
+# Find all scripts in /etc/idekube/, sort them by name
+scripts=$(find /etc/idekube/startup.bash/ -type f -name "*.sh" | sort)
+
+# Loop over the scripts and execute them
+for script in $scripts
+do
+    echo "Executing $script"
+    bash $script
+done
 
 exec /usr/local/bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf

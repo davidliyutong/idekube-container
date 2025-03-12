@@ -17,17 +17,11 @@ RUN apt-get update && apt-get install --fix-missing -y \
     lldb build-essential gdb clang gcc gperf \
     graphviz ghdl openjdk-8-jre libncurses5-dev libreadline-dev flex \
     cmake ninja-build meson autoconf \
-    flatpak \
     rsync \
     wxmaxima \
     && apt-get autoclean -y \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
-
-# WARNING: --security-opt seccomp=unconfined is required for maxima
-
-# Install flatpak
-RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # Configure Python Mirror
 RUN if [ ${USE_PIP_MIRROR} != "false" ]; then \

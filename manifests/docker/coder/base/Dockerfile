@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 AS system
+FROM ubuntu:24.04 AS system
 # FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04 AS system
 
 # These arguments are passed in via the docker build command
@@ -33,7 +33,7 @@ RUN apt-get update \
     # build tools
     python3 python3-pip python3-setuptools python3-wheel python3-dev build-essential cmake \
     # fonts
-    ttf-ubuntu-font-family ttf-wqy-zenhei \
+    ttf-wqy-zenhei \
     && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # tini to fix subreap
@@ -65,14 +65,13 @@ RUN arch=$(uname -m); \
     wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-$arch.sh -O /tmp/miniconda.sh \
     && /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3 \
     && rm /tmp/miniconda.sh \
-    && source /opt/miniconda3/etc/profile.d/conda.sh \
-    && conda init --system bash
+    && /opt/miniconda3/bin/conda init --system bash
 ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Desktop
 RUN apt-get update \
     && apt-get install -y --no-install-recommends --allow-unauthenticated \
-    xvfb xorg xauth x11-xserver-utils libegl1-mesa libglu1-mesa libglu1 libgl1-mesa-glx libglm-dev xfce4 xfce4-goodies xterm \
+    xvfb xorg xauth x11-xserver-utils libegl1 libglu1-mesa libglu1 libgl1 libglm-dev xfce4 xfce4-goodies xterm \
     dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libxv1 \
     # Firefox
     && apt-get install -y firefox libpci3 \
@@ -85,11 +84,13 @@ RUN	wget -q -O- https://packagecloud.io/dcommander/virtualgl/gpgkey | gpg --dear
     wget -q https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list -O /etc/apt/sources.list.d/VirtualGL.list
 RUN	apt-get update && apt-get install virtualgl -y && apt install turbovnc -y \
     && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+RUN ln -s /usr/share/xsessions/xfce.desktop /usr/share/xsessions/ubuntu.desktop
 ENV PATH=${PATH}:/opt/VirtualGL/bin:/opt/TurboVNC/bin
 
 # noVNC
 COPY third_party/noVNC /var/lib/novnc
 COPY third_party/websockify /var/lib/novnc/utils/websockify
+
 # Configure nginx server for container
 RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf
 
