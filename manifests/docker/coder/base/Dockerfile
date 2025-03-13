@@ -73,9 +73,16 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends --allow-unauthenticated \
     xvfb xorg xauth x11-xserver-utils libegl1 libglu1-mesa libglu1 libgl1 libglm-dev xfce4 xfce4-goodies xterm \
     dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libxv1 \
-    # Firefox
-    && apt-get install -y firefox libpci3 \
     && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+# Install the Chromium with ppa:xtradeb/apps
+RUN apt-get update \
+    && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:xtradeb/apps \
+    && apt-get update \
+    && apt-get install -y chromium \
+    && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
 
 # Install TurboVNC and VirtualGL
 RUN	wget -q -O- https://packagecloud.io/dcommander/virtualgl/gpgkey | gpg --dearmor >/etc/apt/trusted.gpg.d/VirtualGL.gpg && \
@@ -96,7 +103,10 @@ RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf
 
 # Create the IDEKube user with home and bash shell, set the password to 'idekube'
 # Allow 'idekube' to run sudo commands without password by modifying the sudoers file
-RUN useradd -m -s /bin/bash idekube \
+RUN if id -u 1000 >/dev/null 2>&1; then userdel $(id -un 1000); fi \
+    && if getent group 1000 >/dev/null 2>&1; then groupdel $(getent group 1000 | cut -d: -f1); fi \
+    && rm -rf /home/ubuntu \
+    && useradd -m -s /bin/bash -u 1000 idekube \
     && echo "idekube:idekube" | chpasswd \
     && echo "idekube ALL=(ALL:ALL) NOPASSWD: ALL" | sudo EDITOR='tee -a' visudo
 
