@@ -46,17 +46,17 @@ RUN bash /tmp/install-scripts/setup-vgl.sh
 ENV NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=all
 
-# Install TurboVNC and VirtualGL
-RUN	bash /tmp/install-scripts/setup-vgl.sh
-ENV PATH=${PATH}:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
-    VGL_DISPLAY=egl \
-    VNC_THREADS=2
-
 # Desktop
 RUN bash /tmp/install-scripts/setup-desktop.sh
 
 # Install the Chromium with ppa:xtradeb/apps
 RUN bash /tmp/install-scripts/setup-chromium.sh
+
+# Install TurboVNC and VirtualGL, must done after the desktop
+RUN	bash /tmp/install-scripts/setup-vnc.sh
+ENV PATH=${PATH}:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
+    VGL_DISPLAY=egl \
+    VNC_THREADS=2
 
 # noVNC
 COPY third_party/noVNC /var/lib/novnc

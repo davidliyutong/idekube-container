@@ -15,7 +15,7 @@ ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd
 # CI/CD variable
 ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
-BRANCHES = coder/base coder/speit coder/dind coder/isaac jupyter/base # order is important
+BRANCHES = coder/base coder/speit coder/dind jupyter/base # order is important
 
 
 build: pull_deps

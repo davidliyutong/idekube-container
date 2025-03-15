@@ -56,7 +56,6 @@ if [ -z "$IDEKUBE_INGRESS_PATH" ]; then
     IDEKUBE_INGRESS_PATH=""
 fi
 
-
 # ------------------------------------------------------
 # Modify Nginx Config file according to IDEKUBE_INGRESS
 # ------------------------------------------------------

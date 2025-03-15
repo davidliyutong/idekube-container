@@ -160,3 +160,16 @@ The project use Makefile to build the container. A `scripts/build_image.sh` is u
 - For Kubernetes with Nginx Ingress Controller, `nginx.org/websocket-services: "code-server"` annotation is required for the coder service to work properly, where code-server is the service name. Optional configurations are `nginx.org/proxy-read-timeout: "3600"` and `nginx.org/proxy-send-timeout: "3600"`.
 
 - `FUSE` is not supported in this container if using Kubernetes. Use `privileged: true` in the deployment to enable it (this has confilicts with `nvidia-device-plugin`).
+
+## Developer Notes
+
+## Checklist
+
+- Coder is working
+- VNC is working, with `turbovnc` and `novnc`, autocorrect resolution
+- Jupyter is working
+- SSH is working, with `websocat` proxy
+- `glxgears` is working
+- `chromium` is working, hardware acceleration is enabled
+- `nvidia-smi` is working
+- shell highlight is working

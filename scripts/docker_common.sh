@@ -26,7 +26,7 @@ AUTHOR=${AUTHOR:-"davidliyutong"}
 NAME=${NAME:-"idekube-container"}
 APT_MIRROR=${APT_MIRROR:-"mirror.sjtu.edu.cn"}
 USE_APT_MIRROR=${USE_APT_MIRROR:-"true"}
-PIP_MIRROR_URL=${PIP_MIRROR_URL:-"https://mirror.sjtu.edu.cn/pypi/web/simpl"}
+PIP_MIRROR_URL=${PIP_MIRROR_URL:-"https://mirror.sjtu.edu.cn/pypi/web/simple"}
 USE_PIP_MIRROR=${USE_PIP_MIRROR:-"true"}
 if [[ -z $BRANCH ]]; then
   echo "BRANCH is not set"
