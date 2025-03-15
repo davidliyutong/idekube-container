@@ -100,10 +100,12 @@ The `artifacts/$flavor/startup.sh` script is used to start the container. It con
 
 | Name                      | Description                                                      | Default     |
 | ------------------------- | ---------------------------------------------------------------- | ----------- |
-| `IDEKUBE_INIT_HOME`       | `true` if need to init home with /etc/skel/                      | `false`     |
+| `IDEKUBE_INIT_HOME`       | any value if need to init home with /etc/skel/                   | empty       |
+| `IDEKUBE_INIT_ROOT`       | any value force init root (works only for the init container)    | empty       |
 | `IDEKUBE_PREFERED_SHELL`  | path to shell                                                    | `/bin/bash` |
 | `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                                   | `""`        |
 | `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <uuid>/, leave empty for `/`                  | `""`        |
+| `I_AM_INIT_CONTAINER`     | any value if the container is an init container                  | empty       |
 
 ## Usage
 
@@ -165,11 +167,15 @@ The project use Makefile to build the container. A `scripts/build_image.sh` is u
 
 ## Checklist
 
-- Coder is working
-- VNC is working, with `turbovnc` and `novnc`, autocorrect resolution
-- Jupyter is working
-- SSH is working, with `websocat` proxy
-- `glxgears` is working
-- `chromium` is working, hardware acceleration is enabled
-- `nvidia-smi` is working
-- shell highlight is working
+- [ ] Coder is working
+- [ ] VNC is working, with `turbovnc` and `novnc`, autocorrect resolution
+- [ ] Jupyter is working
+- [ ] SSH is working, with `websocat` proxy
+- [ ] `glxgears` is working
+- [ ] `chromium` is working, hardware acceleration is enabled
+- [ ] `nvidia-smi` is working
+- [ ] shell highlight is working
+- [ ] `dind` is working
+- [ ] Contaienr runs in the `nvidia` runtime class with GPU
+- [ ] Container runs without GPU
+- [ ] Container runs in the non-root user mode

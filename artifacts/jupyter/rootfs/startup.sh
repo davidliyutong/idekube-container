@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# check if I_AM_INIT_CONTAINER is set
+if [ -z "$I_AM_INIT_CONTAINER" ]; then
+  echo "I_AM_INIT_CONTAINER variable is not set. Skipping..."
+else
+  echo "I_AM_INIT_CONTAINER variable is set."
+  bash /init-container.sh
+  exit $?
+fi
+
 USER=${USERNAME:-root}
 if [ "$USER" != "root" ]; then
     HOME=/home/$USER
@@ -21,8 +30,7 @@ fi
 # ------------------------------------------------------
 # response to IDEKUBE_INIT_HOME
 # ------------------------------------------------------
-IDEKUBE_INIT_HOME=${IDEKUBE_INIT_HOME:-"false"}
-if [ "$IDEKUBE_INIT_HOME" = "true" ]; then
+if [ ! -z "$IDEKUBE_INIT_HOME" ]; then
     echo "Initializing home folder"
     rsync -r /etc/skel/*. $HOME/
     chown -R $USER:$USER $HOME
@@ -48,9 +56,7 @@ chown -R $USER:$USER $HOME/.ssh/authorized_keys
 # ------------------------------------------------------
 # response to IDEKUBE_INGRESS
 # ------------------------------------------------------
-if [ -z "$IDEKUBE_INGRESS_PATH" ]; then
-    IDEKUBE_INGRESS_PATH=""
-fi
+IDEKUBE_INGRESS_PATH=${IDEKUBE_INGRESS_PATH:-""}
 
 # ------------------------------------------------------
 # Modify Nginx Config file according to IDEKUBE_INGRESS
