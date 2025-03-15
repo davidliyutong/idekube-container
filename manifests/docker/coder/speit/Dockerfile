@@ -17,11 +17,8 @@ RUN apt-get update && apt-get install --fix-missing -y \
     lldb build-essential gdb clang gcc gperf \
     graphviz ghdl openjdk-8-jre libncurses5-dev libreadline-dev flex \
     cmake ninja-build meson autoconf \
-    rsync \
     wxmaxima \
-    && apt-get autoclean -y \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # Configure Python Mirror
 RUN if [ ${USE_PIP_MIRROR} != "false" ]; then \
