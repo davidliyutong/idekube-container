@@ -21,6 +21,7 @@ RUN if [ ${USE_APT_MIRROR} != "false" ]; then \
         sed -i s@/security.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
         sed -i s@/ports.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list; \
     fi;
+
 # built-in packages
 RUN apt-get update \
     && apt-get install -y \
@@ -73,6 +74,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends --allow-unauthenticated \
     xvfb xorg xauth x11-xserver-utils libegl1 libglu1-mesa libglu1 libgl1 libglm-dev xfce4 xfce4-goodies xterm \
     dbus-x11 x11-utils alsa-utils mesa-utils libgl1-mesa-dri libxv1 \
+    vulkan-tools \
     && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # Install the Chromium with ppa:xtradeb/apps
@@ -113,10 +115,17 @@ RUN if id -u 1000 >/dev/null 2>&1; then userdel $(id -un 1000); fi \
 # Setup the root filesystem
 COPY artifacts/coder/rootfs /
 
+# Setting VGL and NVIDIA Environment Variables
+ENV NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=all \
+    VGL_DISPLAY=egl \
+    VNC_THREADS=2
+
 # Setting Environment Variables for startup.sh
 ENV SHELL=/bin/bash \
     USERNAME=idekube \
     USERID=1000
+
 
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

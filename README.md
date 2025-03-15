@@ -23,6 +23,7 @@ spec:
       labels:
         app: test-pod
     spec:
+      runtimeClassName: nvidia
       containers:
         - name: container-0
           image: docker.io/davidliyutong/idekube-container:coder-base-v0.3.1
@@ -81,6 +82,13 @@ volumes:
     driver: local
 ```
 
+To run OpenGL applications in the container, you need to use `vglrun` from `VirtualGL`. For example
+
+```shell
+vglrun glxgears
+```
+
+You can monitor the CPU usage of the container with `htop`.
 
 ## Architecture Explained
 
