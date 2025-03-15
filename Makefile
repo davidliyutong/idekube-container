@@ -63,6 +63,9 @@ publishx_all: pull_deps
 publish_github_action:
 	export USE_APT_MIRROR=false USE_PIP_MIRROR=false; make publishx_all
 
+publish_local_action:
+	export USE_APT_MIRROR=true USE_PIP_MIRROR=true; make publishx_all
+
 manifest:
 	-docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)
 	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(IMAGES)

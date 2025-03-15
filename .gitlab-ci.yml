@@ -1,0 +1,20 @@
+build-and-publish:
+  stage: build
+  image: docker:dind
+  tags:
+    - shell
+  variables:
+    AUTHOR: $CI_AUTHOR
+    USE_APT_MIRROR: true
+    APT_MIRROR: $CI_APT_MIRROR
+    REGISTRY: $CI_DOCKER_REGISTRY
+  before_script:
+    - echo $CI_DOCKER_PASSWORD | docker login $CI_DOCKER_REGISTRY --username $CI_DOCKER_USERNAME --password-stdin
+    - docker info
+  script:
+    - make publish_local_action
+  only:
+    - tags
+    - triggers
+    - branches
+  when: manual
