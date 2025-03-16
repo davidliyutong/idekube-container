@@ -54,7 +54,7 @@ RUN bash /tmp/install-scripts/setup-chromium.sh
 
 # Install TurboVNC and VirtualGL, must done after the desktop
 RUN	bash /tmp/install-scripts/setup-vnc.sh
-ENV PATH=${PATH}:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
+ENV PATH=$PATH:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
     VGL_DISPLAY=egl \
     VNC_THREADS=2
 

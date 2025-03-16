@@ -8,14 +8,14 @@ BRANCH   ?= coder/base
 
 # Test variable
 GIT_TAG  ?= latest
-GIT_TAG  := $(shell git describe --tags --abbrev=2 || echo $(GIT_TAG))
+GIT_TAG  := $(shell git tag --list --sort=-v:refname | head -n 1 || echo $(GIT_TAG))
 TAG	     ?= $(subst /,-,$(BRANCH))-$(GIT_TAG)
 ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd64; else echo $$arch; fi)
 
 # CI/CD variable
 ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
-BRANCHES = coder/base coder/speit coder/dind jupyter/base # order is important
+BRANCHES = coder/base coder/speit coder/dind coder/ros2 jupyter/base # order is important
 
 
 build: pull_deps

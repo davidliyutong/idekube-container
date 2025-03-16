@@ -1,3 +1,4 @@
+BASE_IMAGE=ubuntu:24.04
 TZ=Asia/Shanghai
 TINI_VERSION=0.19.0
 SOURCEFORGE=https://sourceforge.net/projects
@@ -10,4 +11,6 @@ BUILDX_VERSION=v0.16.2
 DEBUG=false
 VIRTUALGL_VERSION=3.1
 TURBOVNC_VERSION=3.1
+ISAAC_VERSION=4.2.0
+ROS_DISTRO=jazzy
 __EOF__=__EOF__
