@@ -6,7 +6,7 @@ ARG BRANCH=unknown \
     DOCKER_BRANCH=unknown \
     GIT_TAG=unknown
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG} AS system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:featured-base-${GIT_TAG} AS system
 
 ENV PYTHONIOENCODING=utf-8
 ARG DOCKER_CHANNEL=stable \

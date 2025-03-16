@@ -16,6 +16,10 @@ else
     HOME=/root
 fi
 
+# Remove any existing lock files
+rm -f /tmp/.X*-lock
+rm -f /tmp/.X11-unix/X*
+
 # ------------------------------------------------------
 # response to IDEKUBE_PREFERED_SHELL
 # ------------------------------------------------------

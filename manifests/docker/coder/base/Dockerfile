@@ -8,8 +8,6 @@ ARG TZ=Asia/Shanghai \
     TINI_VERSION=0.19.0 \
     WEBSOCAT_VERSION=1.13.0 \
     CODER_VERSION=4.7.0 \
-    VIRTUALGL_VERSION=3.1 \
-    TURBOVNC_VERSION=3.1
 
 # Avoid prompts for time zone
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -40,27 +38,6 @@ RUN export CODER_VERSION=${CODER_VERSION}; bash /tmp/install-scripts/setup-code-
 # Install Miniconda
 RUN bash /tmp/install-scripts/setup-miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH
-
-# Setup VGL
-RUN bash /tmp/install-scripts/setup-vgl.sh
-ENV NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=all
-
-# Desktop
-RUN bash /tmp/install-scripts/setup-desktop.sh
-
-# Install the Chromium with ppa:xtradeb/apps
-RUN bash /tmp/install-scripts/setup-chromium.sh
-
-# Install TurboVNC and VirtualGL, must done after the desktop
-RUN	bash /tmp/install-scripts/setup-vnc.sh
-ENV PATH=$PATH:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
-    VGL_DISPLAY=egl \
-    VNC_THREADS=2
-
-# noVNC
-COPY third_party/noVNC /var/lib/novnc
-COPY third_party/websockify /var/lib/novnc/utils/websockify
 
 # Create the IDEKube user with home and bash shell
 RUN bash /tmp/install-scripts/setup-user.sh

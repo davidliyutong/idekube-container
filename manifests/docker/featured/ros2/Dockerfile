@@ -4,7 +4,7 @@ ARG REGISTRY=docker.io \
     NAME=idekube-container \
     GIT_TAG=unknown
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG} AS system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:featured-base-${GIT_TAG} AS system
 
 ARG ROS_DISTRO=jazzy
 

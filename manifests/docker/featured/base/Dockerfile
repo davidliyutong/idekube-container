@@ -1,11 +1,15 @@
 FROM ubuntu:24.04 AS system
+# FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04 AS system
 
 # These arguments are passed in via the docker build command
 ARG TZ=Asia/Shanghai \
-    WEBSOCAT_VERSION=1.13.0 \
     APT_MIRROR="mirror.sjtu.edu.cn" \
-    USE_APT_MIRROR="false" \
-    TINI_VERSION=0.19.0
+    USE_APT_MIRROR="true" \
+    TINI_VERSION=0.19.0 \
+    WEBSOCAT_VERSION=1.13.0 \
+    CODER_VERSION=4.7.0 \
+    VIRTUALGL_VERSION=3.1 \
+    TURBOVNC_VERSION=3.1
 
 # Avoid prompts for time zone
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -30,16 +34,33 @@ RUN export TINI_VERSION=${TINI_VERSION}; bash /tmp/install-scripts/setup-tini.sh
 # Setup the websocat and ssh
 RUN export WEBSOCAT_VERSION=${WEBSOCAT_VERSION}; bash /tmp/install-scripts/setup-websocat-ssh.sh
 
+# Setup the code-server
+RUN export CODER_VERSION=${CODER_VERSION}; bash /tmp/install-scripts/setup-code-server.sh
+
 # Install Miniconda
 RUN bash /tmp/install-scripts/setup-miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH
 
-# Install Jupyter
-RUN python3 -m pip install --no-cache-dir jupyterlab
+# Setup VGL
+RUN bash /tmp/install-scripts/setup-vgl.sh
+ENV NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=all
 
-# Install useful JupyterLab plugins
-RUN python3 -m pip install --no-cache-dir \
-    jupyterlab-git jupyterlab-lsp jupyterlab-kite jupyterlab-drawio 
+# Desktop
+RUN bash /tmp/install-scripts/setup-desktop.sh
+
+# Install the Chromium with ppa:xtradeb/apps
+RUN bash /tmp/install-scripts/setup-chromium.sh
+
+# Install TurboVNC and VirtualGL, must done after the desktop
+RUN	bash /tmp/install-scripts/setup-vnc.sh
+ENV PATH=$PATH:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
+    VGL_DISPLAY=egl \
+    VNC_THREADS=2
+
+# noVNC
+COPY third_party/noVNC /var/lib/novnc
+COPY third_party/websockify /var/lib/novnc/utils/websockify
 
 # Create the IDEKube user with home and bash shell
 RUN bash /tmp/install-scripts/setup-user.sh
@@ -48,7 +69,7 @@ ENV SHELL=/bin/bash \
     USERID=1000
 
 # Setup the root filesystem
-COPY artifacts/jupyter/rootfs /
+COPY artifacts/featured/rootfs /
 
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

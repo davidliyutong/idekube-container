@@ -2,7 +2,7 @@
 
 The IDEKUBE project was initiated to provide an IDE container, facilitating development work within Kubernetes clusters. This is a continuously updated collection of containers, primarily used in scenarios such as robotics, simulations, machine learning, and education. The project has been utilized in courses at the Shanghai Jiao Tong University Paris Elite Institute of Technology (SPEIT).
 
-The project is divided into two branches: `coder` and `jupyter`, each offering IDE containers based on Coder and Jupyter, respectively. The `coder` branch provides a desktop environment, whereas the `jupyter` branch does not support a desktop environment. Both branches offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
+The project is divided into three branches: `coder` and `jupyter`, each offering IDE containers based on Coder and Jupyter respectively, and `featured`, which provides a desktop environment and Coder. All branches offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
 
 | Endpoint             | Service                  |
 |----------------------|--------------------------|
@@ -40,7 +40,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: container-0
-          image: docker.io/davidliyutong/idekube-container:coder-base-v0.3.1
+          image: docker.io/davidliyutong/idekube-container:featured-base-v0.3.1
           env:
             - name: NVIDIA_DRIVER_CAPABILITIES # For Vulkan, OpenGL, NVEncode, etc, avoid manually mapping libs.
               value: all
@@ -106,7 +106,7 @@ You can monitor the CPU usage of the container with `htop`.
 
 ## Architecture Explained
 
-There are two flavors: `coder` with novnc support and `jupyter` without novnc support.
+There are three flavors: `featured` with novnc support and `jupyter`/`coder` without novnc support.
 
 The container runs a `supervisord` process that starts services. A nginx server is used to reverse proxy the services.
 
@@ -150,7 +150,7 @@ The project use Makefile to build the container. A script `scripts/build_image.s
 
 First use `make pull_deps` to pull the dependencies.
 
-Set `BRANCH` to the branch you want to build (e.g. coder/base), then use`make build` to build native image and `make buildx` to build the container for multi-arch.
+Set `BRANCH` to the branch you want to build (e.g. featured/base), then use`make build` to build native image and `make buildx` to build the container for multi-arch.
 
 > Use `make buildx_all` to build all branches sequentially.
 
