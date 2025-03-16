@@ -1,8 +1,22 @@
 # idekube container
 
-This is a collection of dev containers for different use cases.
+The IDEKUBE project was initiated to provide an IDE container, facilitating development work within Kubernetes clusters. This is a continuously updated collection of containers, primarily used in scenarios such as robotics, simulations, machine learning, and education. The project has been utilized in courses at the Shanghai Jiao Tong University Paris Elite Institute of Technology (SPEIT).
 
-Supported Architecture: `amd64`, `arm64`
+The project is divided into two branches: `coder` and `jupyter`, each offering IDE containers based on Coder and Jupyter, respectively. The `coder` branch provides a desktop environment, whereas the `jupyter` branch does not support a desktop environment. Both branches offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
+
+| Endpoint             | Service                  |
+|----------------------|--------------------------|
+| `/coder/`            | Coder service            |
+| `/jupyter/`          | Jupyter service          |
+| `/novnc/`            | noVNC service            |
+| `/novnc/websockify/` | noVNC websockify service |
+| `/ssh`               | Websocat-proxied SSH     |
+
+The desktop environment supports hardware acceleration based on EGL (using VirtualGL), thus eliminating the need for /tmp/.X11-unix mapping. When the container runs on an NVIDIA runtime, it should load NVIDIA's OpenGL libraries and enable hardware acceleration. If the container is not configured with a GPU, it will switch to software rendering mode. The container has been tested in Kubernetes clusters with `nvidia-device-plugin`, WSL, and `nvidia-container-toolkit`, an external display is not required.
+
+The container supports architectures including `amd64` and `arm64`.
+
+> Due to a lack of hardware, GPU hardware acceleration on the `arm64` architecture has not been tested.
 
 ## Get Started
 
@@ -98,36 +112,25 @@ The container runs a `supervisord` process that starts services. A nginx server 
 
 The `artifacts/$flavor/startup.sh` script is used to start the container. It configure the container according to environment variables and starts the `supervisord` process.
 
-| Name                      | Description                                                      | Default     |
-| ------------------------- | ---------------------------------------------------------------- | ----------- |
-| `IDEKUBE_INIT_HOME`       | any value if need to init home with /etc/skel/                   | empty       |
-| `IDEKUBE_INIT_ROOT`       | any value force init root (works only for the init container)    | empty       |
-| `IDEKUBE_PREFERED_SHELL`  | path to shell                                                    | `/bin/bash` |
-| `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                                   | `""`        |
-| `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <uuid>/, leave empty for `/`                  | `""`        |
-| `I_AM_INIT_CONTAINER`     | any value if the container is an init container                  | empty       |
+| Name                      | Description                                                   | Default     |
+|---------------------------|---------------------------------------------------------------|-------------|
+| `IDEKUBE_INIT_HOME`       | any value if need to init home with /etc/skel/                | empty       |
+| `IDEKUBE_INIT_ROOT`       | any value force init root (works only for the init container) | empty       |
+| `IDEKUBE_PREFERED_SHELL`  | path to shell                                                 | `/bin/bash` |
+| `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                                | `""`        |
+| `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <uuid>/, leave empty for `/`               | `""`        |
+| `I_AM_INIT_CONTAINER`     | any value if the container is an init container               | empty       |
 
 ## Usage
 
-### novnc
+| URL/CMD                                                                                               | Service              | Note                      |
+|-------------------------------------------------------------------------------------------------------|----------------------|---------------------------|
+| `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/coder/`                                                  | Coder service        | tailing slash is required |
+| `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/jupyter/`                                                | Jupyter service      | tailing slash is required |
+| `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/novnc/`                                                  | noVNC service        | tailing slash is required |
+| `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/" idekube@idekube` | Websocat-proxied SSH |                           |
 
-Visit `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/novnc/` in your browser.
-
-### coder
-
-Visit `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/coder/` in your browser.
-
-### jupyter
-
-Visit `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/jupyter/` in your browser.
-
-### SSH
-
-The ssh is proxied through the nginx server via websocat. Use the following command to connect to the container:
-
-```bash
-ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/" idekube@idekube
-```
+### SSH Proxy
 
 You can also use this ssh config snippet:
 
@@ -139,33 +142,42 @@ Host idekube
 
 > If you have SSL enabled, you can use `wss` instead of `ws`.
 
+### Build Sysetem
+
+The project use Makefile to build the container. A script `scripts/build_image.sh` is used to parse `.dockerargs` file and generate docker build arguments. Image produced are taged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$ARCH` etc. Mutli-arch build is supported with `docker buildx` via `scripts/buildx_image.sh`.
+
 ## Build the container
 
 First use `make pull_deps` to pull the dependencies.
 
-Set `BRANCH` to the branch you want to build (e.g. coder/base), then use `make buildx` to build the container for multi-arch.
+Set `BRANCH` to the branch you want to build (e.g. coder/base), then use`make build` to build native image and `make buildx` to build the container for multi-arch.
 
-Use `make buildx_all` to build all branches
+> Use `make buildx_all` to build all branches sequentially.
 
-Use `make publishx` to push the container to the registry.
+### Build Stage Variables
 
-Use `make publishx_all` to push all containers to the registry.
+You can configure environment variables to control the build process. The following variables are available:
 
-For multi-arch publish, you can also first publish each architecture with `make publish`, then use `make manifest` to create the manifest list.
+| Name             | Description                                          | Default               |
+|------------------|------------------------------------------------------|-----------------------|
+| `REGISTRY`       | The registry to push the image to.                   | `"docker.io"`         |
+| `AUTHOR`         | The username for the registry. Also the project name | `"davidliyutong"`     |
+| `NAME`           | The project name                                     | `"idekube-container"` |
+| `USE_APT_MIRROR` | Use apt mirror for faster build if set to `true`     | `false`               |
+| `APT_MIRROR`     | The apt mirror to use                                | `""`                  |
+| `USE_PIP_MIRROR` | Use pypi mirror for faster build if set to `true`    | `false`               |
+| `PIP_MIRROR_URL` | The pypi mirror to use                               | `""`                  |
+| `GIT_TAG`        | Use pypi mirror for faster build if set to `true`    | `false`               |
 
-### Build Sysetem
+### Publishing
 
-The project use Makefile to build the container. A `scripts/build_image.sh` is used to parse `.dockerargs` file and generate docker build arguments. Image produced are taged as `docker.io/davidliyutong/idekube-container:coder-base-latest-amd64` etc.
+For multi-arch publish, you can also first publish each architecture with `make publish`, then use `make manifest` to create the manifest list. You may also use `make publishx` to push the multi-arch container directly to the registry.
 
-## Known Issues
+> Use `make publishx_all` to push all branches to the registry.
 
-- For Kubernetes with Nginx Ingress Controller, `nginx.org/websocket-services: "code-server"` annotation is required for the coder service to work properly, where code-server is the service name. Optional configurations are `nginx.org/proxy-read-timeout: "3600"` and `nginx.org/proxy-send-timeout: "3600"`.
+### Testing the Container
 
-- `FUSE` is not supported in this container if using Kubernetes. Use `privileged: true` in the deployment to enable it (this has confilicts with `nvidia-device-plugin`).
-
-## Developer Notes
-
-## Checklist
+Here is a checklist for testing the container:
 
 - [ ] Coder is working
 - [ ] VNC is working, with `turbovnc` and `novnc`, autocorrect resolution
@@ -179,3 +191,27 @@ The project use Makefile to build the container. A `scripts/build_image.sh` is u
 - [ ] Contaienr runs in the `nvidia` runtime class with GPU
 - [ ] Container runs without GPU
 - [ ] Container runs in the non-root user mode
+
+## Known Issues
+
+- For Kubernetes with Nginx Ingress Controller, `nginx.org/websocket-services: "code-server"` annotation is required for the coder service to work properly, where code-server is the service name. Optional configurations are `nginx.org/proxy-read-timeout: "3600"` and `nginx.org/proxy-send-timeout: "3600"`.
+
+- `FUSE` is not supported in rootless container. Use `privileged: true`  (Kubernetes Deployment) or `--priviledged=true` (Docker) to enable it. However, **this has bugs with `nvidia-device-plugin`**.
+
+## Roadmap
+
+- [ ] Add a new branch `coder/isaac` for NVIDIA Isaac Sim support
+- [ ] Add a new branch `coder/ros` for ROS support
+- [ ] Add a new branch `jupyter/nlp` for NLP support
+- [ ] Test multus CNI for multiple network interfaces
+- [ ] Test the initContainer for persistent `/` volume
+- [ ] Support for `ubuntu:20.04` and `ubuntu:22.04` base image
+
+## Acknowledgement
+
+Many thanks to the authors of the following projects:
+
+* https://github.com/theasp/docker-novnc
+* https://github.com/VirtualGL/virtualgl
+* https://github.com/TurboVNC/turbovnc
+* https://github.com/coder/coder

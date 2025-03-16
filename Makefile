@@ -81,8 +81,8 @@ run:
 
 debug: build run
 
-third_party/noVNC: manifests/deps.repo
-	vcs import < manifests/deps.repo
+third_party/.ready: manifests/deps.repo
+	vcs import < manifests/deps.repo && touch third_party/.ready
 
-pull_deps: third_party/noVNC
+pull_deps: third_party/.ready
 
