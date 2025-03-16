@@ -24,20 +24,16 @@ RUN if [ ${USE_APT_MIRROR} != "false" ]; then \
     fi;
 
 # built-in packages
-RUN bash /tmp/install-scripts/setup-packages.sh
+RUN bash /tmp/install-scripts/setup-packages-lite.sh
 
 # tini to fix subreap
-RUN export TINI_VERSION=${TINI_VERSION}; bash /tmp/install-scripts/setup-tini.sh
+RUN export TINI_VERSION=${TINI_VERSION}; bash /tmp/install-scripts/setup-tini-lite.sh
 
 # Setup the websocat and ssh
 RUN export WEBSOCAT_VERSION=${WEBSOCAT_VERSION}; bash /tmp/install-scripts/setup-websocat-ssh.sh
 
 # Setup the code-server
 RUN export CODER_VERSION=${CODER_VERSION}; bash /tmp/install-scripts/setup-code-server.sh
-
-# Install Miniconda
-RUN bash /tmp/install-scripts/setup-miniconda.sh
-ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Create the IDEKube user with home and bash shell
 RUN bash /tmp/install-scripts/setup-user.sh
