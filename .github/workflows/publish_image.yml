@@ -26,4 +26,4 @@ jobs:
 
             - name: Run make publish_all
               run: |
-                  make publish_github_action
+                  make publishx_all

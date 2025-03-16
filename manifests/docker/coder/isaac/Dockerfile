@@ -4,10 +4,10 @@ ARG REGISTRY=docker.io \
     NAME=idekube-container \
     GIT_TAG=unknown
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG} AS system
-
-ARG  ISSAC_VERSION=4.2.0
+ARG ISSAC_VERSION=4.2.0
 FROM nvcr.io/nvidia/isaac-sim:${ISSAC_VERSION} AS isaac
+
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG} AS system
 
 # Copy the resources
 COPY --from=isaac /isaac-sim /opt/isaac-sim

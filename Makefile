@@ -15,7 +15,7 @@ ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd
 # CI/CD variable
 ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
-BRANCHES = coder/base coder/speit coder/dind coder/ros2 jupyter/base # order is important
+BRANCHES = coder/base coder/speit coder/dind coder/ros2 jupyter/base jupyter/speit # order is important
 
 
 build: pull_deps
@@ -59,12 +59,6 @@ publishx_all: pull_deps
 		echo "Publishing for branch $$branch"; \
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/publishx_image.sh; \
 	done
-
-publish_github_action:
-	export USE_APT_MIRROR=false USE_PIP_MIRROR=false; make publishx_all
-
-publish_local_action:
-	export USE_APT_MIRROR=true USE_PIP_MIRROR=true; make publishx_all
 
 manifest:
 	-docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)

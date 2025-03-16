@@ -12,7 +12,7 @@ build-and-publish:
     - echo $CI_DOCKER_PASSWORD | docker login $CI_DOCKER_REGISTRY --username $CI_DOCKER_USERNAME --password-stdin
     - docker info
   script:
-    - make publish_local_action
+    - make publishx_all
   only:
     - tags
     - triggers

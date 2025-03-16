@@ -200,12 +200,11 @@ Here is a checklist for testing the container:
 
 ## Roadmap
 
-- [ ] Add a new branch `coder/isaac` for NVIDIA Isaac Sim support
-- [ ] Add a new branch `coder/ros` for ROS support
 - [ ] Add a new branch `jupyter/nlp` for NLP support
 - [ ] Test multus CNI for multiple network interfaces
-- [ ] Test the initContainer for persistent `/` volume
+- [ ] Find how to configure overlay fs for `/` persistency
 - [ ] Support for `ubuntu:20.04` and `ubuntu:22.04` base image
+- [ ] Support for Authorization Header
 
 ## Acknowledgement
 

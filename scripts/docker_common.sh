@@ -30,12 +30,6 @@ REGISTRY=${REGISTRY:-"docker.io"}
 AUTHOR=${AUTHOR:-"davidliyutong"}
 NAME=${NAME:-"idekube-container"}
 
-# set default values for APT_MIRROR, USE_APT_MIRROR, PIP_MIRROR_URL, USE_PIP_MIRROR
-APT_MIRROR=${APT_MIRROR:-"mirror.sjtu.edu.cn"}
-USE_APT_MIRROR=${USE_APT_MIRROR:-"true"}
-PIP_MIRROR_URL=${PIP_MIRROR_URL:-"https://mirror.sjtu.edu.cn/pypi/web/simple"}
-USE_PIP_MIRROR=${USE_PIP_MIRROR:-"true"}
-
 # set GIT_TAG variable
 GIT_TAG=${GIT_TAG:-latest}
 GIT_TAG=$(git tag --list --sort=-v:refname | head -n 1|| echo $GIT_TAG)
@@ -50,10 +44,6 @@ DOCKER_BUILD_ARGS+=" --build-arg REGISTRY=$REGISTRY"
 DOCKER_BUILD_ARGS+=" --build-arg AUTHOR=$AUTHOR"
 DOCKER_BUILD_ARGS+=" --build-arg NAME=$NAME"
 DOCKER_BUILD_ARGS+=" --build-arg GIT_TAG=$GIT_TAG"
-DOCKER_BUILD_ARGS+=" --build-arg APT_MIRROR=$APT_MIRROR"
-DOCKER_BUILD_ARGS+=" --build-arg USE_APT_MIRROR=$USE_APT_MIRROR"
-DOCKER_BUILD_ARGS+=" --build-arg PIP_MIRROR_URL=$PIP_MIRROR_URL"
-DOCKER_BUILD_ARGS+=" --build-arg USE_PIP_MIRROR=$USE_PIP_MIRROR"
 
 # set ARCH variable
 ARCH=$(uname -m)

@@ -37,6 +37,13 @@ ENV PATH=/opt/miniconda3/bin:$PATH
 # Install Jupyter
 RUN python3 -m pip install --no-cache-dir jupyterlab
 
+# Install useful JupyterLab plugins
+RUN jupyter labextension install @jupyterlab/toc \
+    @jupyterlab/git \
+    @jupyterlab/debugger \
+    @jupyter-widgets/jupyterlab-manager \
+    @krassowski/jupyterlab-lsp
+
 # Create the IDEKube user with home and bash shell
 RUN bash /tmp/install-scripts/setup-user.sh
 ENV SHELL=/bin/bash \

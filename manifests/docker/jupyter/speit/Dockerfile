@@ -4,25 +4,25 @@ ARG REGISTRY=docker.io \
     NAME=idekube-container \
     GIT_TAG=unknown
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:coder-base-${GIT_TAG} AS system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:jupyter-base-${GIT_TAG} AS system
 
 ARG PIP_MIRROR_URL="https://mirror.sjtu.edu.cn/pypi/web/simple" \
     USE_PIP_MIRROR="true"
 
 # Install packages
 RUN apt-get update && apt-get install --fix-missing -y \
-    tmate \
-    net-tools traceroute dnsutils iputils-ping \
-    lldb build-essential gdb clang gcc gperf \
-    graphviz ghdl openjdk-8-jre libncurses5-dev libreadline-dev flex \
-    cmake ninja-build meson autoconf \
-    wxmaxima \
+    tmate r-base \
     && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+# Install the R kernel
+RUN R -e "install.packages(c('IRkernel', 'repr', 'IRdisplay', 'evaluate', 'crayon', 'pbdZMQ', 'devtools', 'uuid', 'digest'), repos='https://cloud.r-project.org/')" && \
+    R -e "IRkernel::installspec(user = FALSE)"
 
 # Configure Python Mirror
 RUN if [ ${USE_PIP_MIRROR} != "false" ]; then \
         pip config set global.index-url ${PIP_MIRROR_URL}; \
     fi;
+
 # Configure Python environment
 RUN . /opt/miniconda3/etc/profile.d/conda.sh && conda activate && \
     pip install -U pip && \
