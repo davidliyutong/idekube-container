@@ -26,8 +26,8 @@ publish_all: build_all
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Publishing for branch $$branch"; \
-        @export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/publish_image.sh \
-    done
+		@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/publish_image.sh \
+	done
 
 publishx: pull_deps
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/publishx_image.sh
@@ -57,8 +57,8 @@ manifest_all:
 		docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG || true ;  \
 		docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-%); \
 		for arch in $(ARCHS); do \
-		    echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
-		    docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
+			echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
+			docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
 		done; \
 		docker manifest push $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG; \
 	done
