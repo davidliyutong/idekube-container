@@ -10,7 +10,7 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                os: [ubuntu-latest, macos-latest]
+                os: [ubuntu-latest, ubuntu-latest-arm]
         steps:
             - name: Checkout repository
               uses: actions/checkout@v2
@@ -23,11 +23,7 @@ jobs:
 
             - name: Install vcs
               run: |
-                if [ ${{ matrix.os }} == 'ubuntu-latest' ]; then
-                  sudo apt-get install -y python3-pip && pip3 install vcstool
-                elif [ ${{ matrix.os }} == 'macos-latest' ]; then
-                  brew install python3 && pip3 install vcstool
-                fi
+                sudo apt-get install -y python3-pip && pip3 install vcstool
 
             - name: Run make publish_all
               run: |
