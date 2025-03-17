@@ -6,17 +6,23 @@ echo "Setting Up iverilog"
 ARCH=$(uname -m)
 echo "ARCH: $ARCH"
 
-# Download the code-server
+# Get version
 if [[ $# -gt 1 ]]; then
     VERSION=$2
 else
     VERSION=""
-fi
-if [[ ! -n $VERSION ]]; then
-    VERSION=$(curl -sL https://api.github.com/repos/steveicarus/iverilog/releases/latest | jq -r ".tag_name")
+    if [[ ! -n $VERSION ]]; then
+        VERSION=$(curl -sL https://api.github.com/repos/steveicarus/iverilog/releases/latest | jq -r ".tag_name")
+    fi
+
+    if [[ ! -n $VERSION ]]; then
+        echo "Failed to get the latest version, fallback to 12_0"
+        VERSION="v12_0"
+    fi
 fi
 echo "VERSION: $VERSION"
 
+# Download the tarball
 DOWNLOAD_DESTINATION="/tmp/iverilog.tar.gz"
 if [[ ! -f $DOWNLOAD_DESTINATION ]]; then
     echo "Downloading src tarball for $ARCH"
