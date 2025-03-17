@@ -1,4 +1,4 @@
-.PHONY: build build_all publish publish_all manifest rmmanifest run
+.PHONY: build build_all buildx buildx_all publish publish_all publishx publishx_all manifest manifest_all rmmanifest run
 
 # Build variable
 REGISTRY ?= docker.io
@@ -61,17 +61,45 @@ publishx_all: pull_deps
 	done
 
 manifest:
+	@set -e; \
 	-docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)
 	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(IMAGES)
-	@for arch in $(ARCHS); \
+	for arch in $(ARCHS); \
 	do \
 		echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$$arch; \
 		docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$$arch; \
 	done
 	docker manifest push $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)
 
+manifest_all:
+	@set -e; \
+	for branch in $(BRANCHES); do \
+		TAG=$$(echo $$branch | sed 's/\//-/g')-$(GIT_TAG); \
+		docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG || true ;  \
+		docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-%); \
+		for arch in $(ARCHS); do \
+		    echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
+		    docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
+		done; \
+		docker manifest push $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG; \
+	done
+	
 rmmanifest:
-	docker manifest rm $(REGISTRY)/$(AUTHOR)$(NAME):$(TAG)
+	@set -e; \
+	for arch in $(ARCHS); \
+	do \
+		docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$$arch; \
+	done
+
+rmmanifest_all:
+	@set -e; \
+	for branch in $(BRANCHES); do \
+		TAG=$$(echo $$branch | sed 's/\//-/g')-$(GIT_TAG); \
+		for arch in $(ARCHS); \
+		do \
+			docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
+		done; \
+	done
 
 run:
 	docker run --name idekube-container -it --rm -p 8080:80 -p 8888:8888 -e IDEKUBE_INGRESS_PATH=/davidliyutong -e IDEKUBE_INIT_HOME=true $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
