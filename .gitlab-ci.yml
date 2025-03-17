@@ -1,14 +1,16 @@
 build-and-publish:
   stage: build
-  image: docker:dind
   tags:
     - shell
+    - docker
+    - rocky
   variables:
     AUTHOR: $CI_AUTHOR
     USE_APT_MIRROR: true
     APT_MIRROR: $CI_APT_MIRROR
     REGISTRY: $CI_DOCKER_REGISTRY
   before_script:
+    - sudo dnf install -y python3-vcstool
     - echo $CI_DOCKER_PASSWORD | docker login $CI_DOCKER_REGISTRY --username $CI_DOCKER_USERNAME --password-stdin
     - docker info
   script:
