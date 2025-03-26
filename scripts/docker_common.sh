@@ -25,11 +25,6 @@ if [[ -z $BRANCH ]]; then
   exit 1
 fi
 
-# set default values
-REGISTRY=${REGISTRY:-"docker.io"}
-AUTHOR=${AUTHOR:-"davidliyutong"}
-NAME=${NAME:-"idekube-container"}
-
 # set GIT_TAG variable
 GIT_TAG=${GIT_TAG:-latest}
 GIT_TAG=$(git tag --list --sort=-v:refname | head -n 1|| echo $GIT_TAG)
