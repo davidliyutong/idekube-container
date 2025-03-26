@@ -56,7 +56,8 @@ RUN bash /tmp/install-scripts/setup-chromium.sh
 RUN	bash /tmp/install-scripts/setup-vnc.sh
 ENV PATH=$PATH:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
     VGL_DISPLAY=egl \
-    VNC_THREADS=2
+    VNC_THREADS=2 \
+    LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
 
 # noVNC
 COPY third_party/noVNC /var/lib/novnc
