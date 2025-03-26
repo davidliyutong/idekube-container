@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source scripts/docker_common.sh
+source scripts/shell/docker_common.sh
 # ARCH, BRANCH, IMAGE_REF, DOCKER_BUILD_ARGS
 
 # build the image

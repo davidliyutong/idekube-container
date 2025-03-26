@@ -2,6 +2,8 @@ name: Docker Build and Publish with Buildx
 
 on:
     workflow_dispatch:
+    release:
+        types: [published]
 
 jobs:
     build-and-publish:
@@ -20,6 +22,47 @@ jobs:
               run: |
                 sudo apt-get install -y python3-pip && pip3 install vcstool
 
-            - name: Run make publish_all
+            - name: Publish featured/base
               run: |
-                  make publishx_all
+                  export BRANCH=featured/base && make publishx
+              continue-on-error: true
+
+            - name: Publish featured/speit
+              run: |
+                  export BRANCH=featured/speit && make publishx
+              continue-on-error: true
+            
+            - name: Publish featured/dind
+              run: |
+                  export BRANCH=featured/dind && make publishx
+              continue-on-error: true
+                        
+            # - name: Publish featured/issac
+            #   run: |
+            #       export BRANCH=featured/issac && make publishx
+            #   continue-on-error: true
+
+            - name: Publish featured/ros2
+              run: |
+                  export BRANCH=featured/ros2 && make publishx
+              continue-on-error: true
+
+            - name: Publish coder/base
+              run: |
+                  export BRANCH=coder/base && make publishx
+              continue-on-error: true
+            
+            - name: Publish coder/lite
+              run: |
+                  export BRANCH=coder/lite && make publishx
+              continue-on-error: true
+            
+            - name: Publish jupyter/base
+              run: |
+                  export BRANCH=jupyter/base && make publishx
+              continue-on-error: true
+            
+            - name: Publish jupyter/speit
+              run: |
+                  export BRANCH=jupyter/speit && make publishx
+              continue-on-error: true

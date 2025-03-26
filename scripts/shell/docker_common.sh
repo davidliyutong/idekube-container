@@ -35,8 +35,10 @@ GIT_TAG=${GIT_TAG:-latest}
 GIT_TAG=$(git tag --list --sort=-v:refname | head -n 1|| echo $GIT_TAG)
 DOCKER_BRANCH=$(echo $BRANCH | sed 's/\//-/g')
 TAG=$DOCKER_BRANCH-$GIT_TAG
+TAG_LATEST=$DOCKER_BRANCH-latest
 
 IMAGE_REF=$REGISTRY/$AUTHOR/$NAME:$TAG
+IMAGE_REF_LATEST=$REGISTRY/$AUTHOR/$NAME:$TAG_LATEST
 
 # build docker build args
 DOCKER_BUILD_ARGS=$(build_docker_args ".dockerargs")

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source scripts/docker_common.sh
+source scripts/shell/docker_common.sh
 # ARCH, BRANCH, IMAGE_REF, DOCKER_BUILD_ARGS
 
 # List if thereare idekube buildx, if not, create one

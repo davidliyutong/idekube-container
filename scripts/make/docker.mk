@@ -1,42 +1,42 @@
 
 build: pull_deps
-	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/build_image.sh
+	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/build_image.sh
 
 build_all: pull_deps
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Building for branch $$branch"; \
-		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/build_image.sh; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/build_image.sh; \
 	done
 
 buildx: pull_deps
-	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/buildx_image.sh
+	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/buildx_image.sh
 
 buildx_all: pull_deps
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Building for branch $$branch"; \
-		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/buildx_image.sh; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/buildx_image.sh; \
 	done
 
 publish: build
-	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/publish_image.sh
+	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/publish_image.sh
 
 publish_all: build_all
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Publishing for branch $$branch"; \
-		@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/publish_image.sh \
+		@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publish_image.sh \
 	done
 
 publishx: pull_deps
-	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/publishx_image.sh
+	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/publishx_image.sh
 
 publishx_all: pull_deps
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Publishing for branch $$branch"; \
-		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/publishx_image.sh; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publishx_image.sh; \
 	done
 
 manifest:

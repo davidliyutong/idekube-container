@@ -17,7 +17,7 @@ ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
 BRANCHES = featured/base featured/speit featured/dind featured/ros2 coder/base coder/lite jupyter/base jupyter/speit # order is important
 
-include scripts/docker.mk
+include scripts/make/docker.mk
 
 dev.run:
 	docker run --name idekube-container -it --rm -p 8080:80 -p 8888:8888 -e IDEKUBE_INGRESS_PATH=/davidliyutong -e IDEKUBE_INIT_HOME=true $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}

@@ -144,7 +144,7 @@ Host idekube
 
 ### Build Sysetem
 
-The project use Makefile to build the container. A script `scripts/build_image.sh` is used to parse `.dockerargs` file and generate docker build arguments. Image produced are taged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$ARCH` etc. Mutli-arch build is supported with `docker buildx` via `scripts/buildx_image.sh`.
+The project use Makefile to build the container. A script `scripts/shell/build_image.sh` is used to parse `.dockerargs` file and generate docker build arguments. Image produced are taged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$ARCH` etc. Mutli-arch build is supported with `docker buildx` via `scripts/shell/buildx_image.sh`.
 
 ## Build the container
 
