@@ -116,5 +116,6 @@ if ! shopt -oq posix; then
   fi
 fi
 
+export LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
 . /opt/miniconda3/etc/profile.d/conda.sh
 conda activate

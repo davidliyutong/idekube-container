@@ -191,6 +191,7 @@ Here is a checklist for testing the container:
 - [ ] Contaienr runs in the `nvidia` runtime class with GPU
 - [ ] Container runs without GPU
 - [ ] Container runs in the non-root user mode
+- [ ] IDEKUBE_INIT_HOME works
 
 ## Known Issues
 

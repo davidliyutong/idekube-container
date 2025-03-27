@@ -36,7 +36,7 @@ fi
 # ------------------------------------------------------
 if [ ! -z "$IDEKUBE_INIT_HOME" ]; then
     echo "Initializing home folder"
-    rsync -r /etc/skel/*. $HOME/
+    rsync -r /etc/skel/ $HOME/
     chown -R $USER:$USER $HOME
 else
     echo "Skipping home folder initialization"
