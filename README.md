@@ -1,5 +1,8 @@
 # idekube container
 
+<div style="text-align: center;">
+    <img src="assets/screenshot-0.jpg" alt="Screenshot" style="width: 100%; max-width: 100%; height: auto;">
+</div>
 The IDEKUBE project was initiated to provide an IDE container, facilitating development work within Kubernetes clusters. This is a continuously updated collection of containers, primarily used in scenarios such as robotics, simulations, machine learning, and education. The project has been utilized in courses at the Shanghai Jiao Tong University Paris Elite Institute of Technology (SPEIT).
 
 The project is divided into three branches: `coder` and `jupyter`, each offering IDE containers based on Coder and Jupyter respectively, and `featured`, which provides a desktop environment and Coder. All branches offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
