@@ -1,0 +1,18 @@
+services:
+  idekube_container:
+    image: davidliyutong/idekube-container:featured-base-v0.4.0
+    ports:
+      - "3000:80"
+    privileged: true
+    environment:
+      - I_AM_INIT_CONTAINER=1
+    volumes:
+      - ./data:/rootfs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    ipc: host

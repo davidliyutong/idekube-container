@@ -1,0 +1,17 @@
+services:
+  idekube_container:
+    image: davidliyutong/idekube-container:featured-base-v0.3.9
+    ports:
+      - "3000:80"
+    volumes:
+      - ./data:/home/idekube
+    environment:
+      - IDEKUBE_PREFERED_SHELL=/bin/zsh
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    ipc: host

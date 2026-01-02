@@ -1,0 +1,20 @@
+services:
+  idekube_container:
+    image: davidliyutong/idekube-container:featured-base-v0.4.0
+    ports:
+      - "3000:80"
+    user: root
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - ./data:/rootfs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    ipc: host

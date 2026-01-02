@@ -118,11 +118,20 @@ The `artifacts/$flavor/startup.sh` script is used to start the container. It con
 | Name                      | Description                                                   | Default     |
 |---------------------------|---------------------------------------------------------------|-------------|
 | `IDEKUBE_INIT_HOME`       | any value if need to init home with /etc/skel/                | empty       |
-| `IDEKUBE_INIT_ROOT`       | any value force init root (works only for the init container) | empty       |
 | `IDEKUBE_PREFERED_SHELL`  | path to shell                                                 | `/bin/bash` |
 | `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                                | `""`        |
 | `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <uuid>/, leave empty for `/`               | `""`        |
 | `I_AM_INIT_CONTAINER`     | any value if the container is an init container               | empty       |
+
+### Special Environment `I_AM_INIT_CONTAINER`
+
+If the environment variable `I_AM_INIT_CONTAINER` is set, the container will detect if `/rootfs` is an external mount. If so, it will copy the `/` over to `/rootfs`, excluding certain directories.
+
+### Special Directory `/rootfs`
+
+If the directory `/rootfs` exists and is mounted from the host, the container will chroot into it and run the services there.
+
+> This feature requires the container to run in `privileged` mode.
 
 ## Usage
 
@@ -140,7 +149,7 @@ You can also use this ssh config snippet:
 ```ssh-config
 Host idekube
   User idekube
-  ProxyCommand websocat --binary ws://INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/
+  ProxyCommand websocat --binary ws://$INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/
 ```
 
 > If you have SSL enabled, you can use `wss` instead of `ws`.
@@ -206,7 +215,7 @@ Here is a checklist for testing the container:
 
 - [ ] Add a new branch `jupyter/nlp` for NLP support
 - [ ] Test multus CNI for multiple network interfaces
-- [ ] Find how to configure overlay fs for `/` persistency
+- [x] Find how to configure overlay fs for `/` persistency
 - [ ] Support for `ubuntu:20.04` and `ubuntu:22.04` base image
 - [ ] Support for Authorization Header
 

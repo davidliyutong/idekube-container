@@ -49,6 +49,7 @@ ENV SHELL=/bin/bash \
 
 # Setup the root filesystem
 COPY artifacts/jupyter/rootfs /
+COPY artifacts/startup-scripts /
 
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]
