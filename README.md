@@ -11,8 +11,8 @@ The project is divided into three branches: `coder` and `jupyter`, each offering
 |----------------------|--------------------------|
 | `/coder/`            | Coder service            |
 | `/jupyter/`          | Jupyter service          |
-| `/novnc/`            | noVNC service            |
-| `/novnc/websockify/` | noVNC websockify service |
+| `/vnc/`              | noVNC service            |
+| `/vnc/websockify/`   | noVNC websockify service |
 | `/ssh`               | Websocat-proxied SSH     |
 
 The desktop environment supports hardware acceleration based on EGL (using VirtualGL), thus eliminating the need for /tmp/.X11-unix mapping. When the container runs on an NVIDIA runtime, it should load NVIDIA's OpenGL libraries and enable hardware acceleration. If the container is not configured with a GPU, it will switch to software rendering mode. The container has been tested in Kubernetes clusters with `nvidia-device-plugin`, WSL, and `nvidia-container-toolkit`, an external display is not required.
@@ -109,7 +109,7 @@ You can monitor the CPU usage of the container with `htop`.
 
 ## Architecture Explained
 
-There are three flavors: `featured` with novnc support and `jupyter`/`coder` without novnc support.
+There are three flavors: `featured` with noVNC support and `jupyter`/`coder` without noVNC support.
 
 The container runs a `supervisord` process that starts services. A nginx server is used to reverse proxy the services.
 
@@ -191,25 +191,34 @@ For multi-arch publish, you can also first publish each architecture with `make 
 
 Here is a checklist for testing the container:
 
-- [ ] Coder is working
-- [ ] VNC is working, with `turbovnc` and `novnc`, autocorrect resolution
-- [ ] Jupyter is working
-- [ ] SSH is working, with `websocat` proxy
-- [ ] `glxgears` is working
-- [ ] `chromium` is working, hardware acceleration is enabled
-- [ ] `nvidia-smi` is working
-- [ ] shell highlight is working
-- [ ] `dind` is working
-- [ ] Contaienr runs in the `nvidia` runtime class with GPU
-- [ ] Container runs without GPU
-- [ ] Container runs in the non-root user mode
-- [ ] IDEKUBE_INIT_HOME works
+- [x] Coder is working
+- [x] VNC is working, with `turbovnc` and `noVNC`, autocorrect resolution
+- [x] Jupyter is working
+- [x] SSH is working, with `websocat` proxy
+- [x] `glxgears` is working
+- [x] `chromium` is working, hardware acceleration is enabled
+- [x] `nvidia-smi` is working
+- [x] shell highlight is working
+- [x] `dind` is working
+- [x] Contaienr runs in the `nvidia` runtime class with GPU
+- [x] Container runs without GPU
+- [x] Container runs in the non-root user mode
+- [x] IDEKUBE_INIT_HOME works
 
 ## Known Issues
 
 - For Kubernetes with Nginx Ingress Controller, `nginx.org/websocket-services: "code-server"` annotation is required for the coder service to work properly, where code-server is the service name. Optional configurations are `nginx.org/proxy-read-timeout: "3600"` and `nginx.org/proxy-send-timeout: "3600"`.
 
-- `FUSE` is not supported in rootless container. Use `privileged: true`  (Kubernetes Deployment) or `--priviledged=true` (Docker) to enable it. However, **this has bugs with `nvidia-device-plugin`**.
+
+### Non-Working Features in Rootless Mode
+
+These are features that do not work when the container is run in rootless mode:
+
+- `FUSE` is not supported in rootless container. However, **this has bugs with `nvidia-device-plugin`**.
+- Chromium sandboxing features are not available in rootless mode. You may need to run `chromium --no-sandbox` to launch it.
+- `mount --bind` commands will fail in rootless mode, so the `/rootfs` chroot feature will not work.
+
+ Use `privileged: true` (Kubernetes Deployment) or `--priviledged=true` (Docker) to enable them.
 
 ## Roadmap
 

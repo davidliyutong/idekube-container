@@ -2,7 +2,11 @@ server {
     listen 80;
     listen [::]:80;
 
-    # Coder
+    # Jupyter
+    location = {{ IDEKUBE_INGRESS_PATH }}/jupyter {
+        absolute_redirect off;
+        return 301 {{ IDEKUBE_INGRESS_PATH }}/jupyter/;
+    }
     location ~ ^{{ IDEKUBE_INGRESS_PATH }}/jupyter/(.*)$ {
         proxy_pass http://127.0.0.1:8888{{ IDEKUBE_INGRESS_PATH }}/jupyter/$1;
 
@@ -21,6 +25,14 @@ server {
 
     # SSH via Websocat
     location = {{ IDEKUBE_INGRESS_PATH }}/ssh {
+        proxy_pass http://127.0.0.1:2222/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400;
+        client_max_body_size 0;
+    }
+    location = {{ IDEKUBE_INGRESS_PATH }}/ssh/ {
         proxy_pass http://127.0.0.1:2222/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;

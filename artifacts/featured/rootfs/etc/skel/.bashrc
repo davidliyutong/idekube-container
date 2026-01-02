@@ -116,6 +116,15 @@ if ! shopt -oq posix; then
   fi
 fi
 
+# Load VGL and DL faker libraries and activate conda
 export LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
-. /opt/miniconda3/etc/profile.d/conda.sh
-conda activate
+
+# Change Default Chrome Settings to avoid sandbox issues
+alias chromium='/usr/bin/chromium --no-sandbox --use-angle=gl-egl'
+
+# Conda initialize
+if [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
+    . /opt/miniconda3/etc/profile.d/conda.sh
+    conda activate
+fi
+

@@ -116,5 +116,9 @@ if ! shopt -oq posix; then
   fi
 fi
 
-. /opt/miniconda3/etc/profile.d/conda.sh
-conda activate
+# Conda initialize
+if [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
+    . /opt/miniconda3/etc/profile.d/conda.sh
+    conda activate
+fi
+

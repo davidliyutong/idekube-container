@@ -144,7 +144,7 @@ fi
 
 if [ -n "${IDEKUBE_AUTHORIZED_KEYS:-}" ]; then
     echo "Importing IDEKUBE_AUTHORIZED_KEYS"
-    if echo "$IDEKUBE_AUTHORIZED_KEYS" | base64 -d > "$HOME/.ssh/authorized_keys" 2>/dev/null; then
+    if echo -n "$IDEKUBE_AUTHORIZED_KEYS" | base64 -d > "$HOME/.ssh/authorized_keys" 2>/dev/null; then
         chmod 600 "$HOME/.ssh/authorized_keys"
         echo "Authorized keys imported successfully"
     else
