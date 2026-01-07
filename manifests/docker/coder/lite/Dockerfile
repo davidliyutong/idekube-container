@@ -1,5 +1,5 @@
-FROM ubuntu:24.04 AS system
-# FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04 AS system
+ARG BASE_IMAGE=ubuntu:24.04
+FROM ${BASE_IMAGE} AS system
 
 # These arguments are passed in via the docker build command
 ARG TZ=Asia/Shanghai \
