@@ -117,10 +117,34 @@ else
     echo "Shell $IDEKUBE_PREFERED_SHELL not found, keeping default"
 fi
 
+
+# ------------------------------------------------------
+# Ensure home folder is owned by user
+# ------------------------------------------------------
+if [ -d "$HOME" ]; then
+    current_owner=$(stat -c '%U' "$HOME" 2>/dev/null || stat -f '%Su' "$HOME" 2>/dev/null)
+    if [ "$current_owner" != "$USER" ]; then
+        echo "Home folder ownership mismatch. Current owner: $current_owner, Expected: $USER"
+        echo "Fixing home folder ownership"
+        if chown -R "$USER:$USER" "$HOME" 2>/dev/null; then
+            echo "Home folder ownership fixed successfully"
+        else
+            echo "Warning: Failed to fix home folder ownership"
+        fi
+    else
+        echo "Home folder is correctly owned by $USER"
+    fi
+else
+    echo "Warning: Home folder $HOME does not exist"
+fi
+chmod 755 "$HOME" 2>/dev/null || echo "Warning: Failed to set permissions on home folder"
+
 # ------------------------------------------------------
 # response to IDEKUBE_INIT_HOME
 # ------------------------------------------------------
-if [ -n "${IDEKUBE_INIT_HOME:-}" ] || [ -z "$(ls -A "$HOME" 2>/dev/null)" ]; then
+# Check if home is empty or only contains lost+found (common in fresh volumes)
+home_contents=$(ls -A "$HOME" 2>/dev/null | grep -v '^lost+found$' || true)
+if [ -n "${IDEKUBE_INIT_HOME:-}" ] || [ -z "$home_contents" ]; then
     echo "Initializing home folder"
     if [ -d /etc/skel ]; then
         rsync -r /etc/skel/ "$HOME/" 2>/dev/null || echo "Warning: Failed to sync skel to home"
