@@ -22,9 +22,11 @@ mkdir -p ./configs
 cp -r "${SOURCE_DIR}/configs/"* ./configs/
 
 # Copy root disk image
+set +e
 echo "Copying root disk image..."
 mkdir -p ./images
 cp -r "${SOURCE_DIR}/images/root.img" ./images/
+set -e
 
 echo "Environment preparation complete."
 echo "Starting QEMU..."
