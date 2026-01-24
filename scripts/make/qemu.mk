@@ -40,8 +40,8 @@ publish_qemu: build_qemu
 
 manifest_qemu:
 	@set -e; \
-	-docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)
-	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG) $(IMAGES)
+	docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG) || true;
+	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG) $(IMAGES_QEMU);
 	for arch in $(ARCHS); \
 	do \
 		echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG) $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)-$$arch; \

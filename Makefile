@@ -15,6 +15,7 @@ ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd
 # CI/CD variable
 ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
+IMAGES_QEMU := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)-%)
 BRANCHES = featured/base featured/speit featured/dind featured/ros2 coder/base coder/lite jupyter/base jupyter/speit # order is important
 
 include scripts/make/docker.mk

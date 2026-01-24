@@ -41,7 +41,7 @@ publishx_all:
 
 manifest:
 	@set -e; \
-	-docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)
+	docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) || true;
 	docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG) $(IMAGES)
 	for arch in $(ARCHS); \
 	do \

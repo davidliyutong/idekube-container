@@ -32,7 +32,6 @@
           - gnupg
           - rsync
           - tmux
-          - supervisor
           - nginx
           - openssh-server
           - proot
