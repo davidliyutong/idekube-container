@@ -1,18 +1,18 @@
 
-build: pull_deps
+build:
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/build_image.sh
 
-build_all: pull_deps
+build_all:
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Building for branch $$branch"; \
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/build_image.sh; \
 	done
 
-buildx: pull_deps
+buildx:
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/buildx_image.sh
 
-buildx_all: pull_deps
+buildx_all:
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Building for branch $$branch"; \
@@ -29,10 +29,10 @@ publish_all: build_all
 		@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publish_image.sh; \
 	done
 
-publishx: pull_deps
+publishx:
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/publishx_image.sh
 
-publishx_all: pull_deps
+publishx_all:
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Publishing for branch $$branch"; \

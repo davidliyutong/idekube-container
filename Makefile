@@ -21,12 +21,19 @@ include scripts/make/docker.mk
 include scripts/make/qemu.mk
 
 dev.run:
-	docker run --name idekube-container -it --rm -p 8080:80 -p 8888:8888 -e IDEKUBE_INGRESS_PATH=/davidliyutong -e IDEKUBE_INIT_HOME=true $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
+	docker run --name idekube-container -it --rm -p 8080:80 -p 8888:8888 -e IDEKUBE_INIT_HOME=true $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-${ARCH}
 
 debug: build dev.run
 
-third_party/.ready: manifests/deps.repo
-	vcs import < manifests/deps.repo && touch third_party/.ready
-
-pull_deps: third_party/.ready
+# 合并 set_base 和 set_ascend 为 set_env，使用 make set_env TYPE=base 或 TYPE=ascend
+set_type:
+	@if [ "$(TYPE)" = "base" ]; then \
+		rm -f .dockerargs && ln -s .dockerargs.base .dockerargs; \
+		rm -f .env && ln -s .env.base .env; \
+	elif [ "$(TYPE)" = "ascend" ]; then \
+		rm -f .dockerargs && ln -s .dockerargs.ascend .dockerargs; \
+		rm -f .env && ln -s .env.ascend .env; \
+	else \
+		echo "Usage: make set_env TYPE=base|ascend" && exit 1; \
+	fi
 

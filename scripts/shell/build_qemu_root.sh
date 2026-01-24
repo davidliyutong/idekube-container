@@ -49,7 +49,7 @@ else
 fi
 echo "Using image architecture: ${IMG_ARCH} for QEMU architecture: ${QEMU_ARCH}"
 # Copy base image to cache
-SOURCE_IMAGE="third_party/qemu_images/${DISTRO}-${IMG_ARCH}.img"
+SOURCE_IMAGE=".cache/qemu_images/${DISTRO}-${IMG_ARCH}.img"
 TARGET_IMAGE="${CACHE_DIR}/images/root.img"
 echo "Copying ${SOURCE_IMAGE} to ${TARGET_IMAGE}..."
 cp "$SOURCE_IMAGE" "$TARGET_IMAGE"

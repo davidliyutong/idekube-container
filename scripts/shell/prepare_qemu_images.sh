@@ -3,7 +3,7 @@
 ARCHS=("arm64" "amd64")
 DISTRO="noble"
 IMAGE_ENDPOINT="cloud-images.ubuntu.com"
-FILES_DIR="third_party/qemu_images"
+FILES_DIR=".cache/qemu_images"
 TAG="20260108"
 
 echo "Creating directories..."

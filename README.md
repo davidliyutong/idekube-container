@@ -159,9 +159,9 @@ Host idekube
 
 The project use Makefile to build the container. A script `scripts/shell/build_image.sh` is used to parse `.dockerargs` file and generate docker build arguments. Image produced are taged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$ARCH` etc. Mutli-arch build is supported with `docker buildx` via `scripts/shell/buildx_image.sh`.
 
-## Build the container
+There are two main build types: native image build and QEMU container build. 
 
-First use `make pull_deps` to pull the dependencies.
+## Build the container
 
 Set `BRANCH` to the branch you want to build (e.g. featured/base), then use`make build` to build native image and `make buildx` to build the container for multi-arch.
 
@@ -181,6 +181,10 @@ You can configure environment variables to control the build process. The follow
 | `USE_PIP_MIRROR` | Use pypi mirror for faster build if set to `true`    | `false`               |
 | `PIP_MIRROR_URL` | The pypi mirror to use                               | `""`                  |
 | `GIT_TAG`        | Use pypi mirror for faster build if set to `true`    | `false`               |
+
+### Ascend Support
+
+To build the container with Ascend support, use `make set_type TYPE=ascend` before building the container. This will set the necessary environment variables for Ascend support. For better naming, you can also set the `TAG_POSTFIX` variable to `-ascend`.
 
 ## QEMU Container Build
 

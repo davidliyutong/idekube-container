@@ -60,8 +60,8 @@ ENV PATH=$PATH:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
     LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
 
 # noVNC
-COPY third_party/noVNC /var/lib/novnc
-COPY third_party/websockify /var/lib/novnc/utils/websockify
+RUN git clone --depth 1 --branch v1.5.0 https://github.com/novnc/noVNC.git /var/lib/novnc && \
+    git clone --depth 1 --branch v0.12.0 https://github.com/novnc/websockify.git /var/lib/novnc/utils/websockify
 
 # Create the IDEKube user with home and bash shell
 RUN bash /tmp/install-scripts/setup-user.sh

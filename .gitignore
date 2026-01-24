@@ -3,11 +3,12 @@
 .vscode
 .idea
 
-# Third party
-third_party
-
 # Data directories
 data
 
 # Build caches
 .cache
+
+# Env
+.dockerargs
+.env

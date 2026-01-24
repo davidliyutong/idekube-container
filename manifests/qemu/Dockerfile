@@ -42,7 +42,7 @@ RUN curl -L -o "qemu-${QEMU_VERSION}.tar.xz" "https://download.qemu.org/qemu-${Q
 
 ARG ROOT_DISK_IMAGE_DIR=""
 WORKDIR /var/lib/idekube/
-COPY third_party/qemu_files/*.fd ./uefi/
+COPY .cache/qemu_files/*.fd ./uefi/
 COPY artifacts/qemu/configs/* ./configs/
 COPY ${ROOT_DISK_IMAGE_DIR} ./images/
 

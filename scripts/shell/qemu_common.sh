@@ -42,7 +42,7 @@ TAG_LATEST=$DOCKER_BRANCH-latest$TAG_POSTFIX
 IMAGE_REF=$REGISTRY/$AUTHOR/$NAME:$TAG
 IMAGE_REF_LATEST=$REGISTRY/$AUTHOR/$NAME:$TAG_LATEST
 
-ROOT_DISK_IMAGE_DIR=${ROOT_DISK_IMAGE_DIR:-"third_party/qemu_images/artifacts/"}
+ROOT_DISK_IMAGE_DIR=${ROOT_DISK_IMAGE_DIR:-".cache/qemu_images/artifacts/"}
 
 # build docker build args
 DOCKER_BUILD_ARGS=$(build_docker_args ".dockerargs")

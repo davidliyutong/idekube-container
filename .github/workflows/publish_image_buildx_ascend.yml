@@ -21,8 +21,7 @@ jobs:
 
             - name: Change BASE_IMAGE to Ascend
               run: |
-                  sed -i 's|^BASE_IMAGE=.*$|BASE_IMAGE=ascendai/cann:8.3.rc2-910b-ubuntu22.04-py3.11|g' .dockerargs
-                  sed -i 's|^TAG_POSTFIX=.*$|TAG_POSTFIX=-ascend|g' .dockerargs
+                  make set_type TYPE=ascend
 
             - name: Log in to Docker Hub
               uses: docker/login-action@v2
@@ -35,10 +34,8 @@ jobs:
                 sudo apt-get install -y python3-pip && pip3 install vcstool
 
             - name: Publish ${{ matrix.branch }}
-              env:
-                  TAG_POSTFIX: "-ascend"
               run: |
-                  export BRANCH=${{ matrix.branch }} && make publishx
+                  source .env && export BRANCH=${{ matrix.branch }} && make publishx
               continue-on-error: true
 
     publish-extras:
@@ -48,7 +45,7 @@ jobs:
             matrix:
                 branch: [
                     "featured/speit",
-                    "featured/speit-ai",
+                    "featured/speit-ascendai",
                     "featured/dind",
                     "featured/ros2",
                     "coder/lite",
@@ -60,8 +57,7 @@ jobs:
 
             - name: Change BASE_IMAGE to Ascend
               run: |
-                  sed -i 's|^BASE_IMAGE=.*$|BASE_IMAGE=ascendai/cann:8.3.rc2-910b-ubuntu22.04-py3.11|g' .dockerargs
-                  sed -i 's|^TAG_POSTFIX=.*$|TAG_POSTFIX=-ascend|g' .dockerargs
+                  make set_type TYPE=ascend
 
             - name: Log in to Docker Hub
               uses: docker/login-action@v2
@@ -74,8 +70,6 @@ jobs:
                 sudo apt-get install -y python3-pip && pip3 install vcstool
 
             - name: Publish ${{ matrix.branch }}
-              env:
-                  TAG_POSTFIX: "-ascend"
               run: |
-                  export BRANCH=${{ matrix.branch }} && make publishx
+                  source .env && export BRANCH=${{ matrix.branch }} && make publishx
               continue-on-error: true

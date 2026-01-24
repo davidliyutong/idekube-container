@@ -26,7 +26,7 @@ RUN . /opt/miniconda3/etc/profile.d/conda.sh && conda activate && \
 
 SHELL ["conda", "run", "-n", "pytorch", "/bin/bash", "-c"]
 
-COPY manifests/install-scripts/setup-ai-env.sh /tmp/setup-ai-env.sh
-RUN bash /tmp/setup-ai-env.sh && rm /tmp/setup-ai-env.sh
+COPY manifests/install-scripts/setup-ascendai-env.sh /tmp/setup-ascendai-env.sh
+RUN bash /tmp/setup-ascendai-env.sh && rm /tmp/setup-ascendai-env.sh
 
 SHELL ["/bin/bash", "-c"]

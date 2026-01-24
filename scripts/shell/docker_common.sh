@@ -25,6 +25,8 @@ if [[ -z $BRANCH ]]; then
   exit 1
 fi
 
+
+
 # set default values
 REGISTRY=${REGISTRY:-"docker.io"}
 AUTHOR=${AUTHOR:-"davidliyutong"}

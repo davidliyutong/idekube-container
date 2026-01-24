@@ -19,6 +19,10 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v2
 
+            - name: Change BASE_IMAGE to Ascend
+              run: |
+                  make set_type TYPE=base
+
             - name: Log in to Docker Hub
               uses: docker/login-action@v2
               with:
@@ -31,7 +35,7 @@ jobs:
 
             - name: Publish ${{ matrix.branch }}
               run: |
-                  export BRANCH=${{ matrix.branch }} && make publishx
+                  source .env && export BRANCH=${{ matrix.branch }} && make publishx
               continue-on-error: true
 
     publish-extras:
@@ -50,6 +54,10 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v2
 
+            - name: Change BASE_IMAGE to Ascend
+              run: |
+                  make set_type TYPE=base
+
             - name: Log in to Docker Hub
               uses: docker/login-action@v2
               with:
@@ -62,5 +70,5 @@ jobs:
 
             - name: Publish ${{ matrix.branch }}
               run: |
-                  export BRANCH=${{ matrix.branch }} && make publishx
+                  source .env && export BRANCH=${{ matrix.branch }} && make publishx
               continue-on-error: true

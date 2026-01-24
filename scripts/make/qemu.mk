@@ -1,23 +1,20 @@
-ROOT_DISK_IMAGE_DIR := third_party/qemu_images/artifacts
-prepare_qemu_files:
+ROOT_DISK_IMAGE_DIR := .cache/qemu_images/artifacts
+
+prepare_qemu_files: .cache/qemu_files/.ready
+
+.cache/qemu_files/.ready:
 	scripts/shell/prepare_qemu_files.sh
+	touch .cache/qemu_files/.ready
 
-third_party/qemu_files/.ready:
-	scripts/shell/prepare_qemu_files.sh
-	touch third_party/qemu_files/.ready
+prepare_qemu_images: .cache/qemu_images/artifacts/empty prepare_qemu_files
 
-prepare_qemu_images:
-	scripts/shell/prepare_qemu_images.sh
+.cache/qemu_images/artifacts/empty:
+	scripts/shell/prepare_qemu_images.sh && mkdir -p .cache/qemu_images/artifacts/empty
 
-third_party/qemu_images/artifacts/empty:
-	scripts/shell/prepare_qemu_images.sh
-	mkdir -p third_party/qemu_images/artifacts/empty
+build_qemu_engine: prepare_qemu_images
+	@docker build --build-arg ROOT_DISK_IMAGE_DIR=".cache/qemu_images/artifacts/empty" -t idekube-qemu-engine:latest -f manifests/qemu/Dockerfile.engine .
 
-build_qemu_engine: pull_deps third_party/qemu_images/artifacts/empty
-	@mkdir -p third_party/qemu_images/artifacts/empty
-	@docker build --build-arg ROOT_DISK_IMAGE_DIR="third_party/qemu_images/artifacts/empty" -t idekube-qemu-engine:latest -f manifests/qemu/Dockerfile.engine .
-
-build_qemu: pull_deps third_party/qemu_images/artifacts/empty
+build_qemu: prepare_qemu_images
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/build_qemu.sh
 
 build_qemu_root: build_qemu_engine
