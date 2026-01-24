@@ -110,7 +110,7 @@ cleanup() {
         # Pkill any remaining QEMU processes
         echo "Killing any remaining QEMU processes..."
         pkill -f "qemu-system-${QEMU_ARCH}" 2>/dev/null
-        
+
     elif [[ "${VM_MODE}" == "docker" ]]; then
         # Stop and remove Docker container
         if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -121,7 +121,6 @@ cleanup() {
     fi
 
     echo "Cleanup complete."
-    exit 130
 }
 
 # Set up trap for Ctrl-C (SIGINT) and SIGTERM
@@ -178,7 +177,7 @@ if [[ -z "${VM_MODE}" ]]; then
     # Detect KVM support
     KVM_SUPPORT=false
     KVM_ARGS=""
-    
+
     if [[ -e /dev/kvm ]]; then
         echo "✓ /dev/kvm detected"
         # Check CPU virtualization support
@@ -190,7 +189,7 @@ if [[ -z "${VM_MODE}" ]]; then
             KVM_SUPPORT=true
         fi
     fi
-    
+
     if [[ "${KVM_SUPPORT}" == true ]]; then
         echo "✓ Enabling KVM acceleration for container"
         KVM_ARGS="--device /dev/kvm"

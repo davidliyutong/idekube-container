@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source scripts/shell/docker_common.sh
+source scripts/shell/qemu_common.sh
 
 # Ensure BRANCHES, REGISTRY, AUTHOR, NAME, GIT_TAG, and ARCH are set
 echo "Publishing for branch $branch"
