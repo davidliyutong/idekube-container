@@ -2,12 +2,13 @@
 ARG REGISTRY=docker.io \
     AUTHOR=davidliyutong \
     NAME=idekube-container \
-    GIT_TAG=unknown
+    GIT_TAG=unknown \
+    TAG_POSTFIX=
 
 ARG ISSAC_VERSION=4.2.0
 FROM nvcr.io/nvidia/isaac-sim:${ISSAC_VERSION} AS isaac
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:featured-base-${GIT_TAG} AS system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:featured-base-${GIT_TAG}${TAG_POSTFIX} AS system
 
 # Copy the resources
 COPY --from=isaac /isaac-sim /opt/isaac-sim

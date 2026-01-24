@@ -26,7 +26,7 @@ publish_all: build_all
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Publishing for branch $$branch"; \
-		@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publish_image.sh \
+		@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publish_image.sh; \
 	done
 
 publishx: pull_deps
@@ -62,7 +62,7 @@ manifest_all:
 		done; \
 		docker manifest push $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG; \
 	done
-	
+
 rmmanifest:
 	@set -e; \
 	for arch in $(ARCHS); \

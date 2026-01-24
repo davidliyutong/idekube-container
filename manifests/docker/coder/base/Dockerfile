@@ -46,8 +46,8 @@ ENV SHELL=/bin/bash \
     USERID=1000
 
 # Setup the root filesystem
-COPY artifacts/coder/rootfs /
-COPY artifacts/startup-scripts /
+COPY artifacts/docker/coder/rootfs /
+COPY artifacts/docker/startup-scripts /
 
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

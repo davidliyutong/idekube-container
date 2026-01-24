@@ -7,13 +7,13 @@ The IDEKUBE project was initiated to provide an IDE container, facilitating deve
 
 The project is divided into three branches: `coder` and `jupyter`, each offering IDE containers based on Coder and Jupyter respectively, and `featured`, which provides a desktop environment and Coder. All branches offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
 
-| Endpoint             | Service                  |
-|----------------------|--------------------------|
-| `/coder/`            | Coder service            |
-| `/jupyter/`          | Jupyter service          |
-| `/vnc/`              | noVNC service            |
-| `/vnc/websockify/`   | noVNC websockify service |
-| `/ssh`               | Websocat-proxied SSH     |
+| Endpoint           | Service                  |
+| ------------------ | ------------------------ |
+| `/coder/`          | Coder service            |
+| `/jupyter/`        | Jupyter service          |
+| `/vnc/`            | noVNC service            |
+| `/vnc/websockify/` | noVNC websockify service |
+| `/ssh`             | Websocat-proxied SSH     |
 
 The desktop environment supports hardware acceleration based on EGL (using VirtualGL), thus eliminating the need for /tmp/.X11-unix mapping. When the container runs on an NVIDIA runtime, it should load NVIDIA's OpenGL libraries and enable hardware acceleration. If the container is not configured with a GPU, it will switch to software rendering mode. The container has been tested in Kubernetes clusters with `nvidia-device-plugin`, WSL, and `nvidia-container-toolkit`, an external display is not required.
 
@@ -115,13 +115,13 @@ The container runs a `supervisord` process that starts services. A nginx server 
 
 The `artifacts/$flavor/startup.sh` script is used to start the container. It configure the container according to environment variables and starts the `supervisord` process.
 
-| Name                      | Description                                                   | Default     |
-|---------------------------|---------------------------------------------------------------|-------------|
-| `IDEKUBE_INIT_HOME`       | any value if need to init home with /etc/skel/                | empty       |
-| `IDEKUBE_PREFERED_SHELL`  | path to shell                                                 | `/bin/bash` |
-| `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                                | `""`        |
-| `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <uuid>/, leave empty for `/`               | `""`        |
-| `I_AM_INIT_CONTAINER`     | any value if the container is an init container               | empty       |
+| Name                      | Description                                     | Default     |
+| ------------------------- | ----------------------------------------------- | ----------- |
+| `IDEKUBE_INIT_HOME`       | any value if need to init home with /etc/skel/  | empty       |
+| `IDEKUBE_PREFERED_SHELL`  | path to shell                                   | `/bin/bash` |
+| `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                  | `""`        |
+| `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <uuid>/, leave empty for `/` | `""`        |
+| `I_AM_INIT_CONTAINER`     | any value if the container is an init container | empty       |
 
 ### Special Environment `I_AM_INIT_CONTAINER`
 
@@ -136,7 +136,7 @@ If the directory `/rootfs` exists and is mounted from the host, the container wi
 ## Usage
 
 | URL/CMD                                                                                               | Service              | Note                      |
-|-------------------------------------------------------------------------------------------------------|----------------------|---------------------------|
+| ----------------------------------------------------------------------------------------------------- | -------------------- | ------------------------- |
 | `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/coder/`                                                  | Coder service        | tailing slash is required |
 | `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/jupyter/`                                                | Jupyter service      | tailing slash is required |
 | `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/novnc/`                                                  | noVNC service        | tailing slash is required |
@@ -171,7 +171,7 @@ Set `BRANCH` to the branch you want to build (e.g. featured/base), then use`make
 You can configure environment variables to control the build process. The following variables are available:
 
 | Name             | Description                                          | Default               |
-|------------------|------------------------------------------------------|-----------------------|
+| ---------------- | ---------------------------------------------------- | --------------------- |
 | `REGISTRY`       | The registry to push the image to.                   | `"docker.io"`         |
 | `AUTHOR`         | The username for the registry. Also the project name | `"davidliyutong"`     |
 | `NAME`           | The project name                                     | `"idekube-container"` |
@@ -180,6 +180,32 @@ You can configure environment variables to control the build process. The follow
 | `USE_PIP_MIRROR` | Use pypi mirror for faster build if set to `true`    | `false`               |
 | `PIP_MIRROR_URL` | The pypi mirror to use                               | `""`                  |
 | `GIT_TAG`        | Use pypi mirror for faster build if set to `true`    | `false`               |
+
+## QEMU Container Build
+
+Certain applications, such as Kathara, requires the container to run in privileged mode. This is potentially dangerous if the user could run arbitrary code in the container. To mitigate this, a QEMU-based container is provided that runs a lightweight VM inside the container, isolating the host from the container.
+
+To build the QEMU container, set the `BRANCH` variable to the desired branch (e.g. `featured/base`), then use `make build_qemu_root` to build the root disk for the VM, and `make build_qemu` to build the QEMU container image. You need to have `qemu-system-x86_64` or `qemu-system-aarch64` installed on your host machine, depending on the architecture you are building for.
+
+> Use `make build_qemu_all` to build all branches sequentially.
+
+### Dependencies
+
+- QEMU >= 6.2
+- sshpass (can be installed via `brew install sshpass` or `apt-get install sshpass`)
+
+### QEMU Container  Variables
+
+| Name                     | Description                                  | Default |
+| ------------------------ | -------------------------------------------- | ------- |
+| `IDEKUBE_VM_MEMORY`      | Memory allocated to the QEMU VM              | `"2G"`  |
+| `IDEKUBE_VM_CPU`         | Number of CPU cores allocated to the QEMU VM | `"2"`   |
+| `IDEKUBE_VM_DISK_SIZE`   | Disk size for the QEMU VM root filesystem    | `"20G"` |
+| `IDEKUBE_MONITOR_PORT`   | Expose QEMU monitor port from the VM         | `23`    |
+| `IDEKUBE_SSH_PORT`       | Expose SSH port from the VM                  | `22`    |
+| `IDEKUBE_WEB_PORT`       | Expose web services port from the VM         | `80`    |
+| `IDEKUBE_VM_HEADLESS`    | Run the VM in headless mode                  | `true`  |
+| `IDEKUBE_VM_DISABLE_KVM` | Disable KVM acceleration for the QEMU VM     | `false` |
 
 ### Publishing
 
@@ -208,7 +234,6 @@ Here is a checklist for testing the container:
 ## Known Issues
 
 - For Kubernetes with Nginx Ingress Controller, `nginx.org/websocket-services: "code-server"` annotation is required for the coder service to work properly, where code-server is the service name. Optional configurations are `nginx.org/proxy-read-timeout: "3600"` and `nginx.org/proxy-send-timeout: "3600"`.
-
 
 ### Non-Working Features in Rootless Mode
 

@@ -1,0 +1,486 @@
+---
+- name: Setup IDEKube Featured Environment
+  hosts: all
+  become: yes
+  vars:
+    websocat_version: "1.13.0"
+    coder_version: "4.92.2"
+    IDEKUBE_INGRESS_PATH: ""
+
+  tasks:
+    # Install essential packages
+    - name: Install essential packages
+      apt:
+        name:
+          - apt-utils
+          - apt-transport-https
+          - software-properties-common
+          - sudo
+          - net-tools
+          - unzip
+          - xz-utils
+          - zstd
+          - wget
+          - curl
+          - tree
+          - bison
+          - jq
+          - zsh
+          - git
+          - htop
+          - vim
+          - nano
+          - gnupg
+          - rsync
+          - tmux
+          - supervisor
+          - nginx
+          - openssh-server
+          - proot
+          - python3
+          - python3-pip
+          - python3-setuptools
+          - python3-wheel
+          - python3-dev
+        state: present
+        update_cache: yes
+        install_recommends: no
+
+    - name: Configure Nginx worker processes
+      lineinfile:
+        path: /etc/nginx/nginx.conf
+        regexp: '^worker_processes'
+        line: 'worker_processes 2;'
+
+    # Install websocat for websocket-to-ssh bridge
+    - name: Detect websocat installation
+      stat:
+        path: /usr/local/bin/websocat
+      register: websocat_stat
+    - name: Configure websocat
+      block:
+      - name: Detect architecture for websocat
+        shell: uname -m | sed 's/arm64/aarch64/'
+        register: arch_result
+        changed_when: false
+      - name: Download websocat
+        get_url:
+          url: "https://github.com/vi/websocat/releases/download/v{{ websocat_version }}/websocat.{{ arch_result.stdout }}-unknown-linux-musl"
+          dest: /usr/local/bin/websocat
+          mode: '0755'
+      when: not websocat_stat.stat.exists
+
+    # Install code-server
+    - name: Detect code-server installation
+      stat:
+        path: /usr/local/bin/code-server
+      register: code_server_stat
+    - name: Configure code-server
+      block:
+      - name: Detect architecture for code-server
+        shell: uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/'
+        register: coder_arch_result
+        changed_when: false
+      - name: Download code-server
+        get_url:
+          url: "https://github.com/cdr/code-server/releases/download/v{{ coder_version }}/code-server-{{ coder_version }}-linux-{{ coder_arch_result.stdout }}.tar.gz"
+          dest: /tmp/code-server.tar.gz
+      - name: Create code-server directory
+        file:
+          path: /usr/lib/code-server
+          state: directory
+      - name: Extract code-server
+        unarchive:
+          src: /tmp/code-server.tar.gz
+          dest: /usr/lib/code-server
+          remote_src: yes
+          extra_opts: [--strip-components=1]
+      - name: Create code-server symlink
+        file:
+          src: /usr/lib/code-server/bin/code-server
+          dest: /usr/local/bin/code-server
+          state: link
+      - name: Clean up code-server archive
+        file:
+          path: /tmp/code-server.tar.gz
+          state: absent
+      when: not code_server_stat.stat.exists
+
+    # Install Miniconda
+    - name: Detect Miniconda installation
+      stat:
+        path: /opt/miniconda3/bin/conda
+      register: conda_stat
+    - name: Configure Miniconda
+      block:
+      - name: Detect architecture for Miniconda
+        shell: uname -m | sed 's/arm64/aarch64/'
+        register: conda_arch_result
+        changed_when: false
+      - name: Download Miniconda
+        get_url:
+          url: "https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-{{ conda_arch_result.stdout }}.sh"
+          dest: /tmp/miniconda.sh
+          mode: '0755'
+      - name: Install Miniconda
+        shell: /bin/bash /tmp/miniconda.sh -b -p /opt/miniconda3
+        args:
+          creates: /opt/miniconda3/bin/conda
+      - name: Initialize Conda for bash
+        shell: /opt/miniconda3/bin/conda init --system bash
+        args:
+          creates: /etc/profile.d/conda.sh
+      - name: Accept Conda TOS for r channel
+        shell: /opt/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+        changed_when: false
+        failed_when: false
+      - name: Accept Conda TOS for main channel
+        shell: /opt/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+        changed_when: false
+        failed_when: false
+      - name: Clean up Miniconda installer
+        file:
+          path: /tmp/miniconda.sh
+          state: absent
+      when: not conda_stat.stat.exists
+
+    # Install VirtualGL dependencies
+    - name: Configure VirtualGL
+      block:
+      - name: Install VirtualGL dependencies
+        apt:
+          name:
+            - libxau6
+            - libxdmcp6
+            - libxcb1
+            - libxext6
+            - libx11-6
+            - libglvnd0
+            - libgl1
+            - libglx0
+            - libegl1
+            - libgles2
+            - libglvnd-dev
+            - libgl1-mesa-dev
+            - libegl1-mesa-dev
+            - libgles2-mesa-dev
+            - vulkan-tools
+          state: present
+          install_recommends: no
+      - name: Create EGL vendor directory
+        file:
+          path: /usr/share/glvnd/egl_vendor.d/
+          state: directory
+      - name: Create NVIDIA EGL config
+        copy:
+          dest: /usr/share/glvnd/egl_vendor.d/10_nvidia.json
+          content: |
+            {
+                "file_format_version" : "1.0.0",
+                "ICD": {
+                    "library_path": "libEGL_nvidia.so.0"
+                }
+            }
+      - name: Get Vulkan API version
+        shell: dpkg -s libvulkan1 | grep -oP 'Version:\s+[0-9|\.]+' | grep -oP '[0-9]+(\.[0-9]+)(\.[0-9]+)'
+        register: vulkan_version
+        changed_when: false
+        failed_when: false
+      - name: Create Vulkan ICD directory
+        file:
+          path: /etc/vulkan/icd.d/
+          state: directory
+      - name: Create NVIDIA Vulkan ICD config
+        copy:
+          dest: /etc/vulkan/icd.d/nvidia_icd.json
+          content: |
+            {
+                "file_format_version" : "1.0.0",
+                "ICD": {
+                    "library_path": "libGLX_nvidia.so.0",
+                    "api_version" : "{{ vulkan_version.stdout | default('1.0.0') }}"
+                }
+            }
+
+    # Install Desktop environment
+    - name: Configure Desktop Environment
+      block:
+      - name: Install XFCE desktop environment
+        apt:
+          name:
+            - xfce4
+            - xfce4-goodies
+            - xterm
+            - dbus-x11
+            - xvfb
+            - xorg
+            - xauth
+            - x11-xserver-utils
+            - libglu1-mesa
+            - libglu1
+            - libgl1
+            - libglm-dev
+            - x11-utils
+            - alsa-utils
+            - mesa-utils
+            - libgl1-mesa-dri
+            - libxv1
+            - fonts-wqy-zenhei
+          state: present
+          install_recommends: no
+      - name: Remove xfce4-screensaver
+        apt:
+          name: xfce4-screensaver
+          state: absent
+          purge: yes
+
+    # Install Chromium
+    - name: Configure Chromium Browser
+      block:
+      - name: Add Chromium PPA
+        apt_repository:
+          repo: ppa:xtradeb/apps
+          state: present
+      - name: Install Chromium
+        apt:
+          name: chromium
+          state: present
+          update_cache: yes
+          install_recommends: no
+      - name: Set Chromium as default browser
+        alternatives:
+          name: x-www-browser
+          path: /usr/bin/chromium
+
+    # Install VirtualGL and TurboVNC
+    - name: Configure VNC
+      block:
+      - name: Add VirtualGL GPG key
+        shell: wget -q -O- https://packagecloud.io/dcommander/virtualgl/gpgkey | gpg --dearmor > /etc/apt/trusted.gpg.d/VirtualGL.gpg
+        args:
+          creates: /etc/apt/trusted.gpg.d/VirtualGL.gpg
+      - name: Add TurboVNC GPG key
+        shell: wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | gpg --dearmor > /etc/apt/trusted.gpg.d/TurboVNC.gpg
+        args:
+          creates: /etc/apt/trusted.gpg.d/TurboVNC.gpg
+      - name: Add VirtualGL repository
+        get_url:
+          url: https://raw.githubusercontent.com/VirtualGL/repo/main/VirtualGL.list
+          dest: /etc/apt/sources.list.d/VirtualGL.list
+      - name: Add TurboVNC repository
+        get_url:
+          url: https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list
+          dest: /etc/apt/sources.list.d/TurboVNC.list
+      - name: Install VirtualGL and TurboVNC
+        apt:
+          name:
+            - virtualgl
+            - turbovnc
+          state: present
+          update_cache: yes
+      - name: Create XFCE session symlink for TurboVNC
+        file:
+          src: /usr/share/xsessions/xfce.desktop
+          dest: /usr/share/xsessions/ubuntu.desktop
+          state: link
+
+    # Install noVNC
+    - name: Configure noVNC
+      block:
+      - name: Install git (if not already installed)
+        apt:
+          name: git
+          state: present
+      - name: Clone noVNC repository
+        git:
+          repo: https://github.com/novnc/noVNC.git
+          dest: /var/lib/novnc
+          version: v1.5.0
+          depth: 1
+          force: yes
+      - name: Clone websockify for noVNC
+        git:
+          repo: https://github.com/novnc/websockify.git
+          dest: /var/lib/novnc/utils/websockify
+          version: v0.12.0
+          depth: 1
+          force: yes
+
+    # Create systemd services
+    - name: Create systemd services
+      block:
+      - name: Create TurboVNC systemd service
+        copy:
+          dest: /etc/systemd/system/turbovnc.service
+          content: |
+            [Unit]
+            Description=TurboVNC Server
+            After=network.target
+
+            [Service]
+            Type=forking
+            User=idekube
+            Environment="LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so"
+            ExecStart=/opt/TurboVNC/bin/vncserver :1 -geometry 1280x800 -depth 24 -SecurityTypes None -vgl
+            ExecStop=/opt/TurboVNC/bin/vncserver -kill :1
+            Restart=on-failure
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+      - name: SSH systemd service is already present
+        systemd:
+          name: ssh
+          enabled: yes
+          state: started
+      - name: Create websocat systemd service
+        copy:
+          dest: /etc/systemd/system/websocat.service
+          content: |
+            [Unit]
+            Description=WebSocket to SSH Bridge
+            After=network.target sshd.service
+
+            [Service]
+            Type=simple
+            ExecStart=/usr/local/bin/websocat -E --binary ws-l:0.0.0.0:2222 tcp:127.0.0.1:22
+            Restart=always
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+      - name: Create noVNC systemd service
+        copy:
+          dest: /etc/systemd/system/novnc.service
+          content: |
+            [Unit]
+            Description=noVNC Web VNC Client
+            After=network.target turbovnc.service
+
+            [Service]
+            Type=simple
+            WorkingDirectory=/var/lib/novnc
+            ExecStart=/bin/bash ./utils/novnc_proxy --vnc localhost:5901 --listen 6081
+            Restart=always
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+      - name: Create code-server systemd service
+        copy:
+          dest: /etc/systemd/system/code-server.service
+          content: |
+            [Unit]
+            Description=Code Server
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=idekube
+            ExecStart=/usr/local/bin/code-server --bind-addr 0.0.0.0:3000 --auth none --cert false
+            Restart=always
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+
+    - name: Configure Nginx for proxying
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          server {
+              listen 80;
+              listen [::]:80;
+
+              # VNC via noVNC
+              location = {{ IDEKUBE_INGRESS_PATH }}/vnc {
+                  absolute_redirect off;
+                  return 301 {{ IDEKUBE_INGRESS_PATH }}/vnc/;
+              }
+              location ~ ^{{ IDEKUBE_INGRESS_PATH }}/vnc/(.*)$ {
+                  proxy_pass http://localhost:6081/$1;
+              }
+              location = {{ IDEKUBE_INGRESS_PATH }}/vnc/websockify {
+                  proxy_pass http://localhost:6081/websockify;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_read_timeout 86400;
+              }
+
+              # Coder
+              location = {{ IDEKUBE_INGRESS_PATH }}/coder {
+                  absolute_redirect off;
+                  return 301 {{ IDEKUBE_INGRESS_PATH }}/coder/;
+              }
+              location ~ ^{{ IDEKUBE_INGRESS_PATH }}/coder/(.*)$ {
+                  proxy_pass http://127.0.0.1:3000/$1$is_args$args;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "Upgrade";
+                  proxy_read_timeout 86400;
+                  proxy_set_header Host $http_host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+                  add_header Strict-Transport-Security "max-age=15552000; includeSubDomains" always;
+                  client_max_body_size 0;
+              }
+
+              # SSH via Websocat
+              location = {{ IDEKUBE_INGRESS_PATH }}/ssh {
+                  proxy_pass http://127.0.0.1:2222/;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_read_timeout 86400;
+                  client_max_body_size 0;
+              }
+              location = {{ IDEKUBE_INGRESS_PATH }}/ssh/ {
+                  proxy_pass http://127.0.0.1:2222/;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_read_timeout 86400;
+                  client_max_body_size 0;
+              }
+
+              # Default location
+              location = / {
+                  return 404;
+              }
+
+          }
+
+    # Enable and start services
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable and start services
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - nginx
+        - ssh
+        - websocat
+        - turbovnc
+        - novnc
+        - code-server
+
+    - name: Add ENV VARIABLE to /etc/profile.d/idekube.sh
+      copy:
+        dest: /etc/profile.d/idekube.sh
+        content: |
+          export PATH="/opt/miniconda3/bin:$PATH:/opt/VirtualGL/bin:/opt/TurboVNC/bin"
+          export NVIDIA_VISIBLE_DEVICES=all
+          export NVIDIA_DRIVER_CAPABILITIES=all,VGL_DISPLAY=egl
+          export VNC_THREADS=2
+          export LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
+
+    - name: Clean apt cache
+      apt:
+        autoclean: yes
+        autoremove: yes

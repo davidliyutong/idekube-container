@@ -1,0 +1,35 @@
+#cloud-config
+users:
+  - name: idekube
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    groups: [sudo]
+
+chpasswd:
+  list: |
+    idekube:idekube
+  expire: False
+
+# Configure SSH to allow password authentication
+ssh_pwauth: true
+
+# Set timezone
+timezone: Asia/Shanghai
+
+# Configure APT mirror
+# apt:
+#   primary:
+#     - arches: [default]
+#       uri: http://mirror.sjtu.edu.cn/ubuntu/
+#   security:
+#     - arches: [default]
+#       uri: http://mirror.sjtu.edu.cn/ubuntu/
+
+# Configure network to use DHCP
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+      dhcp6: false

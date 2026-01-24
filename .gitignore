@@ -8,3 +8,6 @@ third_party
 
 # Data directories
 data
+
+# Build caches
+.cache

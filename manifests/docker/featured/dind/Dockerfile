@@ -4,9 +4,10 @@ ARG BRANCH=unknown \
     AUTHOR=davidliyutong \
     NAME=idekube-container \
     DOCKER_BRANCH=unknown \
-    GIT_TAG=unknown
+    GIT_TAG=unknown \
+    TAG_POSTFIX=
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:featured-base-${GIT_TAG} AS system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:featured-base-${GIT_TAG}${TAG_POSTFIX} AS system
 
 ENV PYTHONIOENCODING=utf-8
 ARG DOCKER_CHANNEL=stable \

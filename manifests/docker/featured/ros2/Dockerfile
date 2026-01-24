@@ -2,9 +2,10 @@
 ARG REGISTRY=docker.io \
     AUTHOR=davidliyutong \
     NAME=idekube-container \
-    GIT_TAG=unknown
+    GIT_TAG=unknown \
+    TAG_POSTFIX=
 
-FROM ${REGISTRY}/${AUTHOR}/${NAME}:featured-base-${GIT_TAG} AS system
+FROM ${REGISTRY}/${AUTHOR}/${NAME}:featured-base-${GIT_TAG}${TAG_POSTFIX} AS system
 
 ARG ROS_DISTRO=jazzy
 
