@@ -4,6 +4,8 @@ QEMU_VERSION="10.2.0"
 QEMU_URL="https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz"
 FILES_DIR=".cache/qemu_files"
 
+mkdir -p "${FILES_DIR}"
+
 # Download QEMU if not already present
 if [ -f "${FILES_DIR}/qemu-${QEMU_VERSION}.tar.xz" ]; then
     echo "QEMU tarball already downloaded, skipping download..."
