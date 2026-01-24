@@ -197,8 +197,6 @@ if [[ -z "${VM_MODE}" ]]; then
         echo "⚠ KVM not available, using software emulation"
     fi
 
-    echo "Starting container ${CONTAINER_NAME}..."
-
     docker run -d \
         --name "${CONTAINER_NAME}" \
         --privileged \
@@ -209,7 +207,7 @@ if [[ -z "${VM_MODE}" ]]; then
         -v "${CACHE_ABS_PATH}:/var/lib/data" \
         -e IDEKUBE_VM_MEMORY="4G" \
         -e IDEKUBE_VM_CPU="2" \
-        -e IDEKUBE_VM_DISK_SIZE="10G" \
+        -e IDEKUBE_VM_DISK_SIZE="${IDEKUBE_VM_DISK_SIZE:-10G}" \
         idekube-qemu-engine:latest \
         /startup.sh
 

@@ -445,3 +445,7 @@
       - name: Remove temporary files
         shell:
           rm -rf /tmp/*
+      - name: Replace Home Directory with /etc/skel/
+        shell:
+          rsync -a --delete /etc/skel/ /home/idekube/
+        ignore_errors: yes
