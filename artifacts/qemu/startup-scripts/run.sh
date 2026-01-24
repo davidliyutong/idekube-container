@@ -4,7 +4,7 @@
 VM_MEMORY="${IDEKUBE_VM_MEMORY:-1G}"
 VM_CPU="${IDEKUBE_VM_CPU:-1}"
 VM_DISK_SIZE="${IDEKUBE_VM_DISK_SIZE:-}"
-VM_MONITOR_PORT=${IDEKUBE_MONITOR_PORT:-23}
+EXPOSE_MONITOR_PORT=${IDEKUBE_MONITOR_PORT:-23}
 EXPOSE_SSH_PORT="${IDEKUBE_SSH_PORT:-22}"
 EXPOSE_WEB_PORT="${IDEKUBE_WEB_PORT:-80}"
 
@@ -79,7 +79,7 @@ fi
 # Check if user network backend is available
 NETWORK_OPTS=""
 if ${QEMU_BIN} -machine ${MACHINE_TYPE} -netdev help 2>&1 | grep -q "user"; then
-    NETWORK_OPTS="-netdev user,id=net0,hostfwd=tcp::${EXPOSE_SSH_PORT}-:22,hostfwd=tcp::${EXPOSE_WEB_PORT}-:80 -device virtio-net-pci,netdev=net0,disable-modern=off,disable-legacy=on"
+    NETWORK_OPTS="-netdev user,id=net0,hostfwd=tcp::${EXPOSE_SSH_PORT}-:22,hostfwd=tcp::${EXPOSE_WEB_PORT}-:80,hostfwd=tcp::5901-:5901 -device virtio-net-pci,netdev=net0,disable-modern=off,disable-legacy=on"
 else
     echo "Warning: 'user' network backend not available, networking will be disabled" >&2
     NETWORK_OPTS=""
@@ -139,7 +139,7 @@ if [[ -n "${VM_DISK_SIZE}" ]]; then
     fi
 fi
 
-echo "Starting QEMU with monitor on telnet port ${VM_MONITOR_PORT}..."
+echo "Starting QEMU with monitor on telnet port ${EXPOSE_MONITOR_PORT}..."
 
 ${QEMU_BIN} \
     -M ${MACHINE_TYPE} \
@@ -149,7 +149,7 @@ ${QEMU_BIN} \
     -m ${VM_MEMORY} \
     -smp ${VM_CPU},sockets=1,cores=${VM_CPU},threads=1 \
     ${GRAPHICS_OPTS} \
-    -monitor telnet:0.0.0.0:${VM_MONITOR_PORT},server,nowait \
+    -monitor telnet:0.0.0.0:${EXPOSE_MONITOR_PORT},server,nowait \
     -serial mon:stdio \
     -drive file=./images/root.img,format=qcow2,if=virtio,cache=writethrough,index=0,media=disk \
     -drive file=./configs/cloud-init.iso,index=1,media=cdrom \

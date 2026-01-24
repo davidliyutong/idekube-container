@@ -208,10 +208,7 @@
         apt:
           name:
             - xfce4
-            - xfce4-goodies
-            - xterm
             - dbus-x11
-            - xvfb
             - xorg
             - xauth
             - x11-xserver-utils
@@ -305,16 +302,44 @@
           depth: 1
           force: yes
 
+    # Copy the rootfs
+    - name: Sync rootfs files
+      shell:
+        rsync -ar /tmp/rootfs/ /
+      ignore_errors: yes
+
+    - name: Populate HOME_DIR
+      shell:
+        rsync -ar /etc/skel/ /home/idekube/
+      ignore_errors: yes
+
     # Create systemd services
     - name: Create systemd services
       block:
+      - name: Create startxfce4 systemd service
+        copy:
+          dest: /etc/systemd/system/Xorg.service
+          content: |
+            [Unit]
+            Description=Start Xorg 
+            After=network.target
+
+            [Service]
+            Type=simple
+            ExecStart=/usr/bin/Xorg :0
+            Restart=on-failure
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
       - name: Create TurboVNC systemd service
         copy:
           dest: /etc/systemd/system/turbovnc.service
           content: |
             [Unit]
             Description=TurboVNC Server
-            After=network.target
+            After=Xorg.service
+            Requires=Xorg.service
 
             [Service]
             Type=forking
@@ -411,7 +436,12 @@
           export VNC_THREADS=2
           export LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
 
-    - name: Clean apt cache
-      apt:
-        autoclean: yes
-        autoremove: yes
+    - name: Clean up
+      block:
+      - name: Clean apt cache
+        apt:
+          autoclean: yes
+          autoremove: yes
+      - name: Remove temporary files
+        shell:
+          rm -rf /tmp/*

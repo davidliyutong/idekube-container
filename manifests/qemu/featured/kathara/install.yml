@@ -1,0 +1,125 @@
+---
+- name: Install Kathara and Network Tools
+  hosts: localhost
+  become: yes
+  vars:
+    docker_compose_version: "v2.29.2"
+    netcap_version: "v0.6.11"
+    docker_registry: "docker.io"
+    kathara_images:
+      - kathara/base
+      - kathara/frr
+      - kathara/quagga
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required system packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - apt-transport-https
+          - software-properties-common
+          - git
+          - wget
+        state: present
+
+    - name: Setup Docker
+      block:
+        - name: Install with Official Docker Script
+          shell: |
+            curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+            sh /tmp/get-docker.sh
+          args:
+            creates: /usr/bin/docker
+
+        - name: Add idekube user to docker group
+          user:
+            name: "idekube"
+            groups: docker
+            append: yes
+
+    - name: Setup Kathara and network tools
+      block:
+        - name: Add Kathara PPA
+          apt_repository:
+            repo: ppa:katharaframework/kathara
+            state: present
+
+        - name: Install Kathara and network tools
+          apt:
+            name:
+              - kathara
+              - nano
+              - gedit
+              - xterm
+              - wireshark
+              - iperf
+              - iperf3
+              - netcat-traditional
+              - tcpdump
+            state: present
+            update_cache: yes
+
+    - name: Setup netcap
+      block:
+        - name: Download netcap
+          get_url:
+            url: "https://github.com/dreadl0ck/netcap/releases/download/{{ netcap_version }}/netcap_{{ netcap_version }}_linux_amd64_libc.tar.gz"
+            dest: /tmp/netcap.tar.gz
+            mode: '0644'
+
+        - name: Extract netcap
+          unarchive:
+            src: /tmp/netcap.tar.gz
+            dest: /tmp
+            remote_src: yes
+
+        - name: Install netcap binary
+          copy:
+            src: "/tmp/netcap_{{ netcap_version }}_linux_amd64_libc/net"
+            dest: /usr/bin/net
+            mode: '0755'
+            remote_src: yes
+
+        - name: Clean up netcap download
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /tmp/netcap.tar.gz
+            - "/tmp/netcap_{{ netcap_version }}_linux_amd64_libc"
+
+    - name: Setup Kathara Labs and Docker configuration
+      block:
+        - name: Clone Kathara Labs repository
+          git:
+            repo: https://github.com/KatharaFramework/Kathara-Labs.git
+            dest: /opt/Kathara-Labs
+            version: main
+        - name: Start and enable Docker service
+          systemd:
+            name: docker
+            state: started
+            enabled: yes
+        - name: Pull Kathara Docker images
+          docker_image:
+            name: "{{ docker_registry }}/{{ item }}"
+            source: pull
+          loop: "{{ kathara_images }}"
+
+    - name: Clean up
+      block:
+      - name: Clean apt cache
+        apt:
+          autoclean: yes
+          autoremove: yes
+      - name: Remove temporary files
+        shell:
+          rm -rf /tmp/*

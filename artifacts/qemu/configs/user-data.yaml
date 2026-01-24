@@ -4,7 +4,7 @@ users:
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: false
-    groups: [sudo]
+    groups: [sudo, video]
 
 chpasswd:
   list: |

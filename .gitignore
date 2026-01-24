@@ -11,4 +11,4 @@ data
 
 # Env
 .dockerargs
-.env
+/.env

@@ -19,7 +19,7 @@ mkdir -p "${CACHE_DIR}/uefi"
 # Detect OS architecture
 ARCH=$(uname -m)
 if [ "$ARCH" == "aarch64" ] || [ "$ARCH" == "arm64" ]; then
-    QEMU_ARCH="arm64"
+    QEMU_ARCH="aarch64"
 elif [ "$ARCH" == "x86_64" ]; then
     QEMU_ARCH="x86_64"
 else
@@ -27,7 +27,6 @@ else
     exit 1
 fi
 echo "Detected architecture: $ARCH -> QEMU arch: $QEMU_ARCH"
-
 
 # Determine distro from .dockerargs or use default
 DISTRO="noble"
@@ -38,8 +37,9 @@ if [[ -f ".dockerargs" ]]; then
         echo "Using distro from .dockerargs: $DISTRO"
     fi
 fi
+
 # Map architecture for image filename
-if [ "$QEMU_ARCH" == "arm64" ]; then
+if [ "$QEMU_ARCH" == "aarch64" ]; then
     IMG_ARCH="arm64"
 elif [ "$QEMU_ARCH" == "x86_64" ]; then
     IMG_ARCH="amd64"
@@ -48,25 +48,27 @@ else
     exit 1
 fi
 echo "Using image architecture: ${IMG_ARCH} for QEMU architecture: ${QEMU_ARCH}"
+
 # Copy base image to cache
-SOURCE_IMAGE=".cache/qemu_images/${DISTRO}-${IMG_ARCH}.img"
 TARGET_IMAGE="${CACHE_DIR}/images/root.img"
-echo "Copying ${SOURCE_IMAGE} to ${TARGET_IMAGE}..."
+if [[ -n "$IDEKUBE_FROM" ]]; then
+    SOURCE_IMAGE=".cache/${IDEKUBE_FROM}/images/root.img"
+    echo "IDEKUBE_FROM is set: copying ${SOURCE_IMAGE} to ${TARGET_IMAGE}..."
+else
+    SOURCE_IMAGE=".cache/qemu_images/${DISTRO}-${IMG_ARCH}.img"
+    echo "Copying ${SOURCE_IMAGE} to ${TARGET_IMAGE}..."
+fi
 cp "$SOURCE_IMAGE" "$TARGET_IMAGE"
 
-# Check if idekube-qemu-engine:latest exists
-echo "Checking for idekube-qemu-engine:latest..."
-if ! docker images idekube-qemu-engine:latest | grep -q idekube-qemu-engine; then
-    echo "Engine image not found, building..."
-    make build_qemu_engine
-else
-    echo "Engine image found."
-fi
+# Copy Configs, UEFI files
+echo "Copying configuration and UEFI files..."
+cp -r "artifacts/qemu/configs/"* "${CACHE_DIR}/configs/"
+cp -r .cache/qemu_files/*.fd "${CACHE_DIR}/uefi/"
 
-# Container name
-CONTAINER_NAME="idekube-qemu-engine-${BRANCH//\//-}"
+# Run cloud-init
+docker run --rm -v ${CACHE_DIR}/configs/:/workspace cloud-localds:latest cloud-localds \
+    /workspace/cloud-init.iso /workspace/user-data.yaml /workspace/meta-data.yaml
 
-# Container name
 CONTAINER_NAME="idekube-qemu-engine-${BRANCH//\//-}"
 
 # Stop and remove existing container if it exists
@@ -92,7 +94,7 @@ VM_PID=""
 cleanup() {
     echo ""
     echo "Caught interrupt signal, cleaning up..."
-    
+
     if [[ "${VM_MODE}" == "native" ]]; then
         # Kill QEMU process
         if [[ -n "${VM_PID}" ]] && kill -0 "${VM_PID}" 2>/dev/null; then
@@ -104,6 +106,11 @@ cleanup() {
                 kill -9 "${VM_PID}" 2>/dev/null || true
             fi
         fi
+
+        # Pkill any remaining QEMU processes
+        echo "Killing any remaining QEMU processes..."
+        pkill -f "qemu-system-${QEMU_ARCH}" 2>/dev/null
+        
     elif [[ "${VM_MODE}" == "docker" ]]; then
         # Stop and remove Docker container
         if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -112,7 +119,7 @@ cleanup() {
             docker rm "${CONTAINER_NAME}" 2>/dev/null || true
         fi
     fi
-    
+
     echo "Cleanup complete."
     exit 130
 }
@@ -132,23 +139,23 @@ if [[ -f "artifacts/qemu/startup-scripts/run.sh" ]]; then
     export IDEKUBE_SSH_PORT="${SSH_PORT}"
     export IDEKUBE_MONITOR_PORT="${MONITOR_PORT}"
     export IDEKUBE_WEB_PORT="${HTTP_PORT}"
-    
+
     # Try to run natively
     cd "${CACHE_ABS_PATH}"
-    
+
     if bash ../../../artifacts/qemu/startup-scripts/run.sh > /tmp/qemu-${BRANCH//\//-}.log 2>&1 &
     then
         VM_PID=$!
         VM_MODE="native"
         echo "✓ QEMU started natively (PID: ${VM_PID})"
         echo "  Log file: /tmp/qemu-${BRANCH//\//-}.log"
-        
+
         # Return to project root
         cd - > /dev/null
-        
+
         # Give QEMU time to start
         sleep 5
-        
+
         # Check if process is still running
         if ! kill -0 "${VM_PID}" 2>/dev/null; then
             echo "✗ QEMU process died, checking logs..."
@@ -167,12 +174,36 @@ fi
 if [[ -z "${VM_MODE}" ]]; then
     echo ""
     echo "Launching QEMU engine in Docker..."
+
+    # Detect KVM support
+    KVM_SUPPORT=false
+    KVM_ARGS=""
     
+    if [[ -e /dev/kvm ]]; then
+        echo "✓ /dev/kvm detected"
+        # Check CPU virtualization support
+        if grep -qE 'vmx|svm' /proc/cpuinfo 2>/dev/null; then
+            echo "✓ CPU virtualization support detected"
+            KVM_SUPPORT=true
+        elif command -v lscpu &> /dev/null && lscpu | grep -qE 'Virtualization:.*\S'; then
+            echo "✓ CPU virtualization support detected (lscpu)"
+            KVM_SUPPORT=true
+        fi
+    fi
+    
+    if [[ "${KVM_SUPPORT}" == true ]]; then
+        echo "✓ Enabling KVM acceleration for container"
+        KVM_ARGS="--device /dev/kvm"
+    else
+        echo "⚠ KVM not available, using software emulation"
+    fi
+
     echo "Starting container ${CONTAINER_NAME}..."
-    
+
     docker run -d \
         --name "${CONTAINER_NAME}" \
         --privileged \
+        ${KVM_ARGS} \
         -p "${SSH_PORT}:22" \
         -p "${MONITOR_PORT}:${MONITOR_PORT}" \
         -p "${HTTP_PORT}:80" \
@@ -182,12 +213,12 @@ if [[ -z "${VM_MODE}" ]]; then
         -e IDEKUBE_VM_DISK_SIZE="10G" \
         idekube-qemu-engine:latest \
         /startup.sh
-    
+
     VM_MODE="docker"
-    
+
     echo "Waiting for container to start..."
     sleep 10
-    
+
     # Show container logs
     echo "Container logs:"
     docker logs "${CONTAINER_NAME}" || true
@@ -213,15 +244,31 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         echo "✓ SSH connection established successfully!"
         echo ""
 
+        # COPY ROOTFS
+        BRANCH_V1=$(echo "$BRANCH" | cut -d'/' -f1)
+        SRC_ROOTFS="artifacts/qemu/${BRANCH_V1}/rootfs"
+        echo "Copying rootfs from ${SRC_ROOTFS} to / via scp..."
+        if [[ -d "${SRC_ROOTFS}" ]]; then
+            sshpass -p "idekube" rsync -avz -e "ssh -p ${SSH_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" ${SRC_ROOTFS}/ idekube@localhost:/tmp/rootfs/
+            echo "✓ rootfs copied successfully."
+        else
+            echo "Warning: rootfs directory not found: ${SRC_ROOTFS}"
+        fi
+
         # Apply ansible playbook
         PLAYBOOK="manifests/qemu/$BRANCH/install.yml"
         if [[ -f "${PLAYBOOK}" ]]; then
             echo "Applying ansible playbook: ${PLAYBOOK}..."
             if command -v ansible-playbook &> /dev/null; then
-                ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i "localhost," \
+                if ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i "localhost," \
                     --extra-vars "ansible_ssh_pass=idekube ansible_user=idekube ansible_port=${SSH_PORT}" \
-                    -c ssh "${PLAYBOOK}"
-                echo "✓ Ansible playbook applied successfully!"
+                    -c ssh "${PLAYBOOK}"; then
+                    echo "✓ Ansible playbook applied successfully!"
+                else
+                    echo "✗ Ansible playbook failed!"
+                    cleanup
+                    exit 1
+                fi
             else
                 echo "Warning: ansible-playbook not found. Skipping playbook execution."
                 echo "  Install: pip install ansible"
@@ -231,32 +278,8 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         fi
 
         echo ""
-        echo "VM is ready (running in ${VM_MODE} mode). You can:"
-        if [[ "${VM_MODE}" == "native" ]]; then
-            echo "  - View logs: tail -f /tmp/qemu-${BRANCH//\//-}.log"
-            echo "  - Connect via SSH: ssh -p ${SSH_PORT} idekube@localhost (password: idekube)"
-            echo "  - Access monitor: telnet localhost ${MONITOR_PORT}"
-            echo "  - Stop VM: kill ${VM_PID}"
-            echo ""
-            echo "Press Ctrl-C to stop the VM and exit."
-            # Wait for the QEMU process
-            wait "${VM_PID}"
-        else
-            echo "  - Monitor logs: docker logs -f ${CONTAINER_NAME}"
-            echo "  - Connect via SSH: ssh -p ${SSH_PORT} idekube@localhost (password: idekube)"
-            echo "  - Access monitor: telnet localhost ${MONITOR_PORT}"
-            echo "  - Stop VM: docker stop ${CONTAINER_NAME}"
-            echo ""
-            echo "Press Ctrl-C to stop the container and exit."
-            # Wait for interrupt signal
-            while true; do
-                if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-                    echo "Container stopped."
-                    break
-                fi
-                sleep 2
-            done
-        fi
+        echo "✓ VM provisioning completed successfully!"
+        cleanup
         exit 0
     fi
 

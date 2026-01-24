@@ -21,8 +21,14 @@ echo "Copying configuration files..."
 mkdir -p ./configs
 cp -r "${SOURCE_DIR}/configs/"* ./configs/
 
+# Copy root disk image
+echo "Copying root disk image..."
+mkdir -p ./images
+cp -r "${SOURCE_DIR}/images/root.img" ./images/
+
 echo "Environment preparation complete."
 echo "Starting QEMU..."
+
 
 # Execute the run.sh script
 exec /run.sh

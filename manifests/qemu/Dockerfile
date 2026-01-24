@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS builder
 
 ARG QEMU_VERSION=10.2.0
 
@@ -25,20 +25,40 @@ RUN apt-get update && \
             libusb-1.0 \
             libslirp-dev \
             python3 \
-            python3-pip \
-            cloud-image-utils && \
+            python3-pip && \
             rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp/qemu
 RUN curl -L -o "qemu-${QEMU_VERSION}.tar.xz" "https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz" && \
     tar -xf "qemu-${QEMU_VERSION}.tar.xz" --strip-components=1 && \
-    rm "qemu-${QEMU_VERSION}.tar.xz" && \
-    ./configure --enable-vhost-user --enable-vhost-net --enable-kvm --enable-libusb --enable-opengl --enable-slirp && \
+    rm "qemu-${QEMU_VERSION}.tar.xz"
+
+RUN ./configure --prefix=/usr/local --enable-vhost-user --enable-vhost-net --enable-kvm --enable-libusb --enable-opengl --enable-slirp --enable-vnc && \
     cd build && \
     make -j$(nproc) && \
-    make install && \
-    cd ../.. && \
-    rm -rf /tmp/qemu
+    make DESTDIR=/tmp/qemu-install install
+
+FROM ubuntu:24.04 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    bc \
+    jq \
+    cloud-image-utils \
+    libsysfs-dev \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libmount1 \
+    libpixman-1-0 \
+    libusb-1.0-0 \
+    libslirp0 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy QEMU deb from builder
+COPY --from=builder /tmp/qemu-install/usr/local /usr/local/
 
 ARG ROOT_DISK_IMAGE_DIR=""
 WORKDIR /var/lib/idekube/
@@ -46,7 +66,7 @@ COPY .cache/qemu_files/*.fd ./uefi/
 COPY artifacts/qemu/configs/* ./configs/
 COPY ${ROOT_DISK_IMAGE_DIR} ./images/
 
-WORKDIR /
 COPY artifacts/qemu/startup-scripts/* /
+WORKDIR /var/lib/data
 
 ENTRYPOINT [ "/startup.sh" ]

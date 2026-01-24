@@ -42,7 +42,7 @@ TAG_LATEST=$DOCKER_BRANCH-latest$TAG_POSTFIX
 IMAGE_REF=$REGISTRY/$AUTHOR/$NAME:$TAG
 IMAGE_REF_LATEST=$REGISTRY/$AUTHOR/$NAME:$TAG_LATEST
 
-ROOT_DISK_IMAGE_DIR=${ROOT_DISK_IMAGE_DIR:-".cache/qemu_images/artifacts/"}
+ROOT_DISK_IMAGE_DIR=${ROOT_DISK_IMAGE_DIR:-".cache"}
 
 # build docker build args
 DOCKER_BUILD_ARGS=$(build_docker_args ".dockerargs")
@@ -50,7 +50,7 @@ DOCKER_BUILD_ARGS+=" --build-arg REGISTRY=$REGISTRY"
 DOCKER_BUILD_ARGS+=" --build-arg AUTHOR=$AUTHOR"
 DOCKER_BUILD_ARGS+=" --build-arg NAME=$NAME"
 DOCKER_BUILD_ARGS+=" --build-arg GIT_TAG=$GIT_TAG"
-DOCKER_BUILD_ARGS+=" --build-arg ROOT_DISK_IMAGE_DIR=$ROOT_DISK_IMAGE_DIR/$DOCKER_BRANCH"
+DOCKER_BUILD_ARGS+=" --build-arg ROOT_DISK_IMAGE_DIR=$ROOT_DISK_IMAGE_DIR/$BRANCH/images"
 # set ARCH variable
 ARCH=$(uname -m)
 # if ARCH equals to aarch64, then set the ARCH to arm64, if ARCH equals to x86_64, then set the ARCH to amd64
