@@ -5,7 +5,6 @@
   vars:
     websocat_version: "1.13.0"
     coder_version: "4.92.2"
-    IDEKUBE_INGRESS_PATH: ""
 
   tasks:
     # Install essential packages
@@ -383,74 +382,6 @@
 
             [Install]
             WantedBy=multi-user.target
-
-    - name: Configure Nginx for proxying
-      copy:
-        dest: /etc/nginx/sites-available/default
-        content: |
-          server {
-              listen 80;
-              listen [::]:80;
-
-              # VNC via noVNC
-              location = {{ IDEKUBE_INGRESS_PATH }}/vnc {
-                  absolute_redirect off;
-                  return 301 {{ IDEKUBE_INGRESS_PATH }}/vnc/;
-              }
-              location ~ ^{{ IDEKUBE_INGRESS_PATH }}/vnc/(.*)$ {
-                  proxy_pass http://localhost:6081/$1;
-              }
-              location = {{ IDEKUBE_INGRESS_PATH }}/vnc/websockify {
-                  proxy_pass http://localhost:6081/websockify;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                  proxy_read_timeout 86400;
-              }
-
-              # Coder
-              location = {{ IDEKUBE_INGRESS_PATH }}/coder {
-                  absolute_redirect off;
-                  return 301 {{ IDEKUBE_INGRESS_PATH }}/coder/;
-              }
-              location ~ ^{{ IDEKUBE_INGRESS_PATH }}/coder/(.*)$ {
-                  proxy_pass http://127.0.0.1:3000/$1$is_args$args;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "Upgrade";
-                  proxy_read_timeout 86400;
-                  proxy_set_header Host $http_host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-                  add_header Strict-Transport-Security "max-age=15552000; includeSubDomains" always;
-                  client_max_body_size 0;
-              }
-
-              # SSH via Websocat
-              location = {{ IDEKUBE_INGRESS_PATH }}/ssh {
-                  proxy_pass http://127.0.0.1:2222/;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                  proxy_read_timeout 86400;
-                  client_max_body_size 0;
-              }
-              location = {{ IDEKUBE_INGRESS_PATH }}/ssh/ {
-                  proxy_pass http://127.0.0.1:2222/;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                  proxy_read_timeout 86400;
-                  client_max_body_size 0;
-              }
-
-              # Default location
-              location = / {
-                  return 404;
-              }
-
-          }
 
     # Enable and start services
     - name: Reload systemd daemon

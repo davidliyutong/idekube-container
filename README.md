@@ -120,8 +120,9 @@ The `artifacts/$flavor/startup.sh` script is used to start the container. It con
 | `IDEKUBE_INIT_HOME`       | any value if need to init home with /etc/skel/  | empty       |
 | `IDEKUBE_PREFERED_SHELL`  | path to shell                                   | `/bin/bash` |
 | `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                  | `""`        |
-| `IDEKUBE_INGRESS_PATH`    | Ingress path, e.g. <uuid>/, leave empty for `/` | `""`        |
 | `I_AM_INIT_CONTAINER`     | any value if the container is an init container | empty       |
+
+> If running with url prefix `IDEKUBE_INGRESS_PATH`, please use ingress re-write rules to strip the prefix. Direct support for `IDEKUBE_INGRESS_PATH` has been removed to simplify the codebase.
 
 ### Special Environment `I_AM_INIT_CONTAINER`
 
@@ -137,10 +138,10 @@ If the directory `/rootfs` exists and is mounted from the host, the container wi
 
 | URL/CMD                                                                                               | Service              | Note                      |
 | ----------------------------------------------------------------------------------------------------- | -------------------- | ------------------------- |
-| `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/coder/`                                                  | Coder service        | tailing slash is required |
-| `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/jupyter/`                                                | Jupyter service      | tailing slash is required |
-| `$SCHEME://INGRESS_HOST$IDEKUBE_INGRESS_PATH/novnc/`                                                  | noVNC service        | tailing slash is required |
-| `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/" idekube@idekube` | Websocat-proxied SSH |                           |
+| `$SCHEME://INGRESS_HOST$/coder/`                                                  | Coder service        | tailing slash is required |
+| `$SCHEME://INGRESS_HOST$/jupyter/`                                                | Jupyter service      | tailing slash is required |
+| `$SCHEME://INGRESS_HOST$/novnc/`                                                  | noVNC service        | tailing slash is required |
+| `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$/ssh/" idekube@idekube` | Websocat-proxied SSH |                           |
 
 ### SSH Proxy
 
@@ -149,7 +150,7 @@ You can also use this ssh config snippet:
 ```ssh-config
 Host idekube
   User idekube
-  ProxyCommand websocat --binary ws://$INGRESS_HOST$IDEKUBE_INGRESS_PATH/ssh/
+  ProxyCommand websocat --binary ws://$INGRESS_HOST$/ssh/
 ```
 
 > If you have SSL enabled, you can use `wss` instead of `ws`.

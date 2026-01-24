@@ -181,23 +181,6 @@ else
 fi
 chown -R "$USER:$USER" "$HOME/.ssh" 2>/dev/null || echo "Warning: Failed to change ownership of .ssh"
 
-# ------------------------------------------------------
-# response to IDEKUBE_INGRESS
-# ------------------------------------------------------
-IDEKUBE_INGRESS_PATH=${IDEKUBE_INGRESS_PATH:-""}
-
-# ------------------------------------------------------
-# Modify Nginx Config file according to IDEKUBE_INGRESS
-# ------------------------------------------------------
-echo "Configuring Nginx for INGRESS_HOST$IDEKUBE_INGRESS_PATH"
-if [ -f /etc/nginx/sites-enabled/default ]; then
-    sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/nginx/sites-enabled/default || \
-        echo "Warning: Failed to configure Nginx"
-    sed -i "s|{{ IDEKUBE_INGRESS_PATH }}|$IDEKUBE_INGRESS_PATH|g" /etc/supervisor/conf.d/supervisord.conf || \
-        echo "Warning: Failed to configure Supervisord"
-else
-    echo "Warning: Nginx config file not found"
-fi
 
 # ------------------------------------------------------
 # Detect all startup bash scripts and run them
