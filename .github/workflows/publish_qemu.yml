@@ -2,11 +2,6 @@ name: Build and Publish QEMU Images
 
 on:
   workflow_dispatch:
-    inputs:
-      branches:
-        description: 'QEMU branches to build (comma-separated, e.g., "featured/base,featured/kathara")'
-        required: false
-        default: 'featured/base,featured/kathara'
   release:
     types: [published]
 

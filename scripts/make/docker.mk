@@ -9,6 +9,13 @@ build_all:
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/build_image.sh; \
 	done
 
+build_all_ascend:
+	@set -e; \
+	for branch in $(BRANCHES_ASCEND); do \
+		echo "Building for branch $$branch"; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/build_image.sh; \
+	done
+
 buildx:
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/buildx_image.sh
 
@@ -26,7 +33,14 @@ publish_all: build_all
 	@set -e; \
 	for branch in $(BRANCHES); do \
 		echo "Publishing for branch $$branch"; \
-		@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publish_image.sh; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publish_image.sh; \
+	done
+
+publish_all_ascend: build_all_ascend
+	@set -e; \
+	for branch in $(BRANCHES_ASCEND); do \
+		echo "Publishing for branch $$branch"; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publish_image.sh; \
 	done
 
 publishx:

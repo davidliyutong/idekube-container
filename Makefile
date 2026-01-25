@@ -17,6 +17,7 @@ ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
 IMAGES_QEMU := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)-%)
 BRANCHES = featured/base featured/speit featured/dind featured/ros2 coder/base coder/lite jupyter/base jupyter/speit # order is important
+BRANCHES_ASCEND =  featured/base featured/speit-ascendai jupyter/base jupyter/speit-ascendai
 
 include scripts/make/docker.mk
 include scripts/make/qemu.mk

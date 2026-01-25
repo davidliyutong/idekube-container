@@ -36,11 +36,13 @@ RUN bash /tmp/install-scripts/setup-miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Install Jupyter
-RUN python3 -m pip install --no-cache-dir jupyterlab
-
-# Install useful JupyterLab plugins
-RUN python3 -m pip install --no-cache-dir \
-    jupyterlab-git jupyterlab-lsp jupyterlab-kite jupyterlab-drawio 
+SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
+RUN pip install --no-cache-dir jupyterlab \
+    jupyterlab-git jupyterlab-lsp jupyterlab-drawio jupyterlab-language-pack-zh-CN jupyter-ai[all] jupyter_copilot && \
+    conda install -y nb_conda_kernels && \
+    mkdir -p /opt/miniconda3/share/jupyter/lab/settings && \
+    echo '{"@jupyterlab/apputils-extension:notification":{"fetchNews":"false"},"@jupyterlab/apputils-extension:announcements":{"checkForUpdates":false}}' > /opt/miniconda3/share/jupyter/lab/settings/overrides.json
+SHELL ["/bin/bash", "-c"]
 
 # Create the IDEKube user with home and bash shell
 RUN bash /tmp/install-scripts/setup-user.sh

@@ -21,8 +21,9 @@ RUN if [ ${USE_PIP_MIRROR} != "false" ]; then \
     fi;
 
 # Configure Python environment
-RUN . /opt/miniconda3/etc/profile.d/conda.sh && conda activate && \
-    pip install -U pip && \
+SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
+RUN pip install -U pip && \
     pip install --no-cache-dir sympy numpy matplotlib scipy scikit-learn networkx pandas pydot graphviz jupyter six && \
     pip install --no-cache-dir symbtools ipydex ipython && \
     pip install --no-cache-dir --no-build-isolation pycartan
+SHELL ["/bin/bash", "-c"]
