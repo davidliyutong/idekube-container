@@ -49,6 +49,14 @@ manifest_qemu:
 	done
 	docker manifest push $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)
 
+rmmanifest_qemu:
+	@set -e; \
+	for arch in $(ARCHS); \
+	do \
+		docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)-$$arch; \
+	done
+
+
 debug_qemu_root:
 	echo "Starting QEMU VM natively for branch ${BRANCH}..."
 	@cd .cache/${BRANCH}/ && ../../../artifacts/qemu/startup-scripts/run.sh

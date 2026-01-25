@@ -1,4 +1,8 @@
-.PHONY: build build_all buildx buildx_all publish publish_all publishx publishx_all manifest manifest_all rmmanifest dev.run debug
+.PHONY: build build_all buildx buildx_all publish publish_all publishx publishx_all manifest manifest_all rmmanifest rmmanifest_all manifest_qemu rmmanifest_qemu debug_qemu_root dev.run debug set_type
+
+# Include .env file if it exists
+-include .env
+export
 
 # Build variable
 REGISTRY ?= docker.io

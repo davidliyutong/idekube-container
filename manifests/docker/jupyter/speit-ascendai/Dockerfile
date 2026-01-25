@@ -26,5 +26,8 @@ RUN pip install -U pip && \
 RUN conda create -n pytorch python=3.11 -y
 SHELL ["conda", "run", "-n", "pytorch", "/bin/bash", "-c"]
 COPY manifests/install-scripts/setup-ascendai-env.sh /tmp/setup-ascendai-env.sh
-RUN bash /tmp/setup-ascendai-env.sh && rm /tmp/setup-ascendai-env.sh
+RUN bash /tmp/setup-ascendai-env.sh && rm /tmp/setup-ascendai-env.sh && \
+    pip install ipykernel && \
+    python -m ipykernel install --name pytorch --display-name "Python (pytorch)" && \
+    rm -rf /opt/miniconda3/envs/pytorch/share/jupyter/kernels/
 SHELL ["/bin/bash", "-c"]
