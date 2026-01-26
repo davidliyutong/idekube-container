@@ -35,7 +35,7 @@ jobs:
 
             - name: Publish ${{ matrix.branch }}
               run: |
-                  source .env && export BRANCH=${{ matrix.branch }} && make publishx
+                  export BRANCH=${{ matrix.branch }} && make publishx
               continue-on-error: true
 
     publish-extras:
@@ -70,5 +70,5 @@ jobs:
 
             - name: Publish ${{ matrix.branch }}
               run: |
-                  source .env && export BRANCH=${{ matrix.branch }} && make publishx
+                  export BRANCH=${{ matrix.branch }} && make publishx
               continue-on-error: true

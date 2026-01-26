@@ -25,8 +25,8 @@ if [ -d "/usr/local/Ascend" ]; then
             tqdm
 
         # Install vLLM with Ascend support
-        pip install vllm==0.13.0
-        pip install vllm-ascend==0.13.0rc1
+        # pip install vllm==0.13.0
+        # pip install vllm-ascend==0.13.0rc1
     else
         echo "Ascend AI environment setup is only supported on arm64 architecture."
         pip install torch==2.6.0 torchvision torchaudio

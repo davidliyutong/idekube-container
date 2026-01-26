@@ -38,10 +38,8 @@ GIT_TAG=$(git tag --list --sort=-v:refname | head -n 1|| echo $GIT_TAG)
 TAG_POSTFIX=${TAG_POSTFIX:-""}
 DOCKER_BRANCH=$(echo $BRANCH | sed 's/\//-/g')
 TAG=$DOCKER_BRANCH-$GIT_TAG$TAG_POSTFIX
-TAG_LATEST=$DOCKER_BRANCH-latest$TAG_POSTFIX
 
 IMAGE_REF=$REGISTRY/$AUTHOR/$NAME:$TAG
-IMAGE_REF_LATEST=$REGISTRY/$AUTHOR/$NAME:$TAG_LATEST
 
 # build docker build args
 DOCKER_BUILD_ARGS=$(build_docker_args ".dockerargs")
@@ -51,10 +49,12 @@ DOCKER_BUILD_ARGS+=" --build-arg NAME=$NAME"
 DOCKER_BUILD_ARGS+=" --build-arg GIT_TAG=$GIT_TAG"
 
 # set ARCH variable
-ARCH=$(uname -m)
+ARCH=${ARCH:-$(uname -m)}
 # if ARCH equals to aarch64, then set the ARCH to arm64, if ARCH equals to x86_64, then set the ARCH to amd64
 if [ "$ARCH" == "aarch64" ]; then
   ARCH="arm64"
 elif [ "$ARCH" == "x86_64" ]; then
   ARCH="amd64"
+elif [ "$ARCH" == "none" ]; then
+  ARCH=""
 fi

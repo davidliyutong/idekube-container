@@ -37,7 +37,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             qemu-system-x86 \
-            qemu-system-arm \
+            qemu-system-aarch64 \
             qemu-utils \
             cloud-image-utils \
             ansible \
@@ -58,14 +58,7 @@ jobs:
 
       - name: Build and publish QEMU image for ${{ matrix.branch }}
         run: |
-          export BRANCH=${{ matrix.branch }}
-          export REGISTRY=${{ env.REGISTRY }}
-          export AUTHOR=${{ env.AUTHOR }}
-          export NAME=${{ env.NAME }}
-          make publish_qemu
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          export BRANCH=${{ matrix.branch }} && make publish_qemu
 
       - name: Upload logs on failure
         if: failure()
@@ -76,10 +69,9 @@ jobs:
             /tmp/qemu-*.log
           if-no-files-found: ignore
 
-  summary:
   publish-qemu-extras:
     runs-on: ubuntu-latest
-    needs: [publish-qemu-base, publish-qemu-extras]-base
+    needs: [publish-qemu-base]
     strategy:
       fail-fast: false
       matrix:
@@ -104,7 +96,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             qemu-system-x86 \
-            qemu-system-arm \
+            qemu-system-aarch64 \
             qemu-utils \
             cloud-image-utils \
             ansible \
@@ -125,14 +117,7 @@ jobs:
 
       - name: Build and publish QEMU image for ${{ matrix.branch }}
         run: |
-          export BRANCH=${{ matrix.branch }}
-          export REGISTRY=${{ env.REGISTRY }}
-          export AUTHOR=${{ env.AUTHOR }}
-          export NAME=${{ env.NAME }}
-          make publish_qemu
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          export BRANCH=${{ matrix.branch }} && make publish_qemu
 
       - name: Upload logs on failure
         if: failure()
@@ -142,16 +127,3 @@ jobs:
           path: |
             /tmp/qemu-*.log
           if-no-files-found: ignore
-
-    runs-on: ubuntu-latest
-    needs: publish-qemu
-    if: always()
-    steps:
-      - name: Job Summary
-        run: |
-          echo "## QEMU Images Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ QEMU images build and publish workflow completed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Registry:** ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Repository:** ${{ env.AUTHOR }}/${{ env.NAME }}-qemu" >> $GITHUB_STEP_SUMMARY

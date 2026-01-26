@@ -53,7 +53,7 @@ rmmanifest_qemu:
 	@set -e; \
 	for arch in $(ARCHS); \
 	do \
-		docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)-$$arch; \
+		hub-tool tag rm $(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)-$$arch || true; \
 	done
 
 

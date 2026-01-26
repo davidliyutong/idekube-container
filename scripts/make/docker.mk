@@ -26,6 +26,13 @@ buildx_all:
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/buildx_image.sh; \
 	done
 
+buildx_all_ascend:
+	@set -e; \
+	for branch in $(BRANCHES_ASCEND); do \
+		echo "Building for branch $$branch"; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/buildx_image.sh; \
+	done
+
 publish: build
 	@export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=${BRANCH}; bash scripts/shell/publish_image.sh
 
@@ -38,6 +45,7 @@ publish_all: build_all
 
 publish_all_ascend: build_all_ascend
 	@set -e; \
+	export ARCH="none"; \
 	for branch in $(BRANCHES_ASCEND); do \
 		echo "Publishing for branch $$branch"; \
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publish_image.sh; \
@@ -49,6 +57,13 @@ publishx:
 publishx_all:
 	@set -e; \
 	for branch in $(BRANCHES); do \
+		echo "Publishing for branch $$branch"; \
+		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publishx_image.sh; \
+	done
+
+publishx_all_ascend:
+	@set -e; \
+	for branch in $(BRANCHES_ASCEND); do \
 		echo "Publishing for branch $$branch"; \
 		export REGISTRY=${REGISTRY} AUTHOR=${AUTHOR} NAME=${NAME} BRANCH=$$branch; bash scripts/shell/publishx_image.sh; \
 	done
@@ -77,11 +92,24 @@ manifest_all:
 		docker manifest push $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG; \
 	done
 
+manifest_all_ascend:
+	@set -e; \
+	for branch in $(BRANCHES_ASCEND); do \
+		TAG=$$(echo $$branch | sed 's/\//-/g')-$(GIT_TAG); \
+		docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG || true ;  \
+		docker manifest create $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-%); \
+		for arch in $(ARCHS); do \
+			echo docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
+			docker manifest annotate --os linux --arch $$arch $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
+		done; \
+		docker manifest push $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG; \
+	done
+
 rmmanifest:
 	@set -e; \
 	for arch in $(ARCHS); \
 	do \
-		docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$$arch; \
+		hub-tool tag rm $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$$arch || true	; \
 	done
 
 rmmanifest_all:
@@ -90,6 +118,16 @@ rmmanifest_all:
 		TAG=$$(echo $$branch | sed 's/\//-/g')-$(GIT_TAG); \
 		for arch in $(ARCHS); \
 		do \
-			docker manifest rm $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch; \
+			hub-tool tag rm $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch || true; \
+		done; \
+	done
+
+rmmanifest_all_ascend:
+	@set -e; \
+	for branch in $(BRANCHES_ASCEND); do \
+		TAG=$$(echo $$branch | sed 's/\//-/g')-$(GIT_TAG); \
+		for arch in $(ARCHS); \
+		do \
+			hub-tool tag rm $(REGISTRY)/$(AUTHOR)/$(NAME):$$TAG-$$arch || true; \
 		done; \
 	done

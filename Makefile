@@ -11,7 +11,6 @@ NAME     ?= idekube-container
 BRANCH   ?= featured/base
 
 # Test variable
-GIT_TAG  ?= latest
 GIT_TAG  := $(shell git tag --list --sort=-v:refname | head -n 1 || echo $(GIT_TAG))
 TAG	     ?= $(subst /,-,$(BRANCH))-$(GIT_TAG)
 ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd64; else echo $$arch; fi)

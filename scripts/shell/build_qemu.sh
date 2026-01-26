@@ -13,5 +13,5 @@ docker build $DOCKER_BUILD_ARGS . -t $IMAGE_REF-$ARCH -t $IMAGE_REF -f manifests
 # remove dangling images
 danglingimages=$(docker images --filter "dangling=true" -q); \
 if [[ $danglingimages != "" ]]; then \
-  docker rmi $(docker images --filter "dangling=true" -q); \
+  docker rmi $(docker images --filter "dangling=true" -q) || true; \
 fi
