@@ -147,7 +147,7 @@ home_contents=$(ls -A "$HOME" 2>/dev/null | grep -v '^lost+found$' || true)
 if [ -n "${IDEKUBE_INIT_HOME:-}" ] || [ -z "$home_contents" ]; then
     echo "Initializing home folder"
     if [ -d /etc/skel ]; then
-        rsync -r /etc/skel/ "$HOME/" 2>/dev/null || echo "Warning: Failed to sync skel to home"
+        rsync -al /etc/skel/ "$HOME/" 2>/dev/null || echo "Warning: Failed to sync skel to home"
         chown -R "$USER:$USER" "$HOME" 2>/dev/null || echo "Warning: Failed to change ownership of home"
     else
         echo "Warning: /etc/skel directory not found"

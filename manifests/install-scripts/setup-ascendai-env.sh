@@ -22,8 +22,12 @@ if [ -d "/usr/local/Ascend" ]; then
             absl-py \
             ml-dtypes \
             cloudpickle \
-            tqdm
-
+            tqdm \
+            protobuf \
+            transformers \
+            evaluate \
+            accelerate \
+            scikit-learn \
         # Install vLLM with Ascend support
         # pip install vllm==0.13.0
         # pip install vllm-ascend==0.13.0rc1
