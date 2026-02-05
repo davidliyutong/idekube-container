@@ -9,14 +9,14 @@ pip install -U pip
 if [ -d "/usr/local/Ascend" ]; then
     if [ "$ARCH" = "arm64" ]; then
         pip install --no-cache-dir \
-            attrs>=25.4.0 \
-            decorator>=5.2.1 \
-            numpy>=2.4.0 \
-            psutil>=7.2.1 \
-            pyyaml>=6.0.3 \
-            scipy>=1.16.3 \
-            torch==2.6.0 \
-            torch-npu==2.6.0 \
+            "attrs>=25.4.0" \
+            "decorator>=5.2.1" \
+            "numpy>=2.4.0" \
+            "psutil>=7.2.1" \
+            "pyyaml>=6.0.3" \
+            "scipy>=1.16.3" \
+            "torch==2.6.0" \
+            "torch-npu==2.6.0" \
             torchvision \
             tornado \
             absl-py \

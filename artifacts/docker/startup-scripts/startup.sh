@@ -188,7 +188,7 @@ chown -R "$USER:$USER" "$HOME/.ssh" 2>/dev/null || echo "Warning: Failed to chan
 # Find all scripts in /etc/idekube/, sort them by name
 if [ -d /etc/idekube/startup.bash/ ]; then
     scripts=$(find /etc/idekube/startup.bash/ -type f -name "*.sh" 2>/dev/null | sort)
-    
+
     # Loop over the scripts and execute them
     if [ -n "$scripts" ]; then
         while IFS= read -r script; do
