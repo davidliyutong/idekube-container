@@ -37,7 +37,7 @@ ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Install Jupyter
 RUN python3 -m pip install --no-cache-dir jupyterlab \
-    jupyterlab-git jupyterlab-lsp jupyterlab-drawio jupyterlab-language-pack-zh-CN jupyter_copilot jupyter-ai[all]
+    jupyterlab-git jupyterlab-drawio jupyterlab-language-pack-zh-CN
 
 RUN mkdir -p /usr/local/share/jupyter/lab/settings && \
     echo '{"@jupyterlab/apputils-extension:notification":{"fetchNews":"false"},"@jupyterlab/apputils-extension:announcements":{"checkForUpdates":false}}' > /usr/local/share/jupyter/lab/settings/overrides.json
