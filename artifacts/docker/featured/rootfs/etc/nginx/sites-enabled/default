@@ -55,9 +55,10 @@ server {
         client_max_body_size 0;
     }
 
-    # Default location
+    # Landing page
     location = / {
-        return 404;
+        root /usr/share/nginx/html;
+        index index.html;
     }
 
 }

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDEKube Container</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 48px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #2d3748;
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        
+        .services {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .service-card {
+            display: block;
+            padding: 20px 24px;
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+        
+        .service-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        
+        .service-description {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        
+        .service-icon {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #48bb78;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #a0aec0;
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 640px) {
+            .container {
+                padding: 32px 24px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 IDEKube</h1>
+        <p class="subtitle">Select a service to get started</p>
+        
+        <div class="services" id="services">
+            <!-- Services will be dynamically loaded -->
+        </div>
+        
+        <div class="footer">
+            <p>IDEKube Container Environment</p>
+        </div>
+    </div>
+    
+    <script>
+        // Define available services based on container type
+        const serviceConfig = {
+            vnc: {
+                name: 'Desktop (VNC)',
+                description: 'Remote desktop via noVNC',
+                icon: '🖥️'
+            },
+            coder: {
+                name: 'Code Server',
+                description: 'VS Code in the browser',
+                icon: '💻'
+            },
+            jupyter: {
+                name: 'Jupyter Lab',
+                description: 'Interactive notebooks',
+                icon: '📊'
+            },
+            ssh: {
+                name: 'SSH Terminal',
+                description: 'Web-based SSH access',
+                icon: '⌨️'
+            }
+        };
+        
+        // Detect available services by checking endpoints
+        async function detectServices() {
+            const services = [];
+            
+            for (const [path, config] of Object.entries(serviceConfig)) {
+                try {
+                    const response = await fetch(`/${path}/`, { method: 'HEAD' });
+                    if (response.ok || response.status === 401 || response.status === 403) {
+                        services.push({ path, ...config });
+                    }
+                } catch (e) {
+                    // Service not available
+                }
+            }
+            
+            return services;
+        }
+        
+        // Render services
+        function renderServices(services) {
+            const container = document.getElementById('services');
+            
+            if (services.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #718096;">No services available</p>';
+                return;
+            }
+            
+            container.innerHTML = services.map(service => `
+                <a href="/${service.path}/" class="service-card">
+                    <div class="service-name">
+                        <span class="service-icon"></span>
+                        ${service.icon} ${service.name}
+                    </div>
+                    <div class="service-description">${service.description}</div>
+                </a>
+            `).join('');
+        }
+        
+        // Initialize
+        detectServices().then(renderServices);
+    </script>
+</body>
+</html>
