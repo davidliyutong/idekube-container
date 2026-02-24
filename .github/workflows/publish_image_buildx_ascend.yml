@@ -43,8 +43,8 @@ jobs:
         strategy:
             matrix:
                 branch: [
-                    "featured/speit-ascendai",
-                    "jupyter/speit-ascendai"
+                    "featured/speit-ai",
+                    "jupyter/speit-ai"
                 ]
         steps:
             - name: Checkout repository
