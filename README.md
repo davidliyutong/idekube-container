@@ -143,6 +143,26 @@ If the directory `/rootfs` exists and is mounted from the host, the container wi
 | `$SCHEME://INGRESS_HOST$/novnc/`                                                  | noVNC service        | tailing slash is required |
 | `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$/ssh/" idekube@idekube` | Websocat-proxied SSH |                           |
 
+### Landing Page (`index.html`)
+
+The container ships a built-in Nginx landing page at `/`.
+
+- It detects which services are reachable and only shows available entries.
+- It probes `/coder/`, `/jupyter/`, `/vnc/`, and checks WebSocket availability on `/ssh/`.
+- The SSH card copies a ready-to-use `ProxyCommand` snippet for `websocat`.
+- It supports Chinese/English switch and dark/light theme, both persisted in `localStorage`.
+
+Current landing-page files are:
+
+- `artifacts/docker/coder/rootfs/usr/share/nginx/html/index.html`
+- `artifacts/docker/jupyter/rootfs/usr/share/nginx/html/index.html`
+- `artifacts/docker/featured/rootfs/usr/share/nginx/html/index.html`
+- `artifacts/qemu/featured/rootfs/usr/share/nginx/html/index.html`
+
+If you deploy behind an ingress path prefix, make sure your ingress rewrites paths so the page can still reach `/coder/`, `/jupyter/`, `/vnc/`, and `/ssh/` correctly.
+
+> TODO: add supoprt for a goto URL query parameter, so the landing page can automatically redirect to a specific service.
+
 ### SSH Proxy
 
 You can also use this ssh config snippet:
@@ -159,7 +179,7 @@ Host idekube
 
 The project use Makefile to build the container. A script `scripts/shell/build_image.sh` is used to parse `.dockerargs` file and generate docker build arguments. Image produced are taged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$ARCH` etc. Mutli-arch build is supported with `docker buildx` via `scripts/shell/buildx_image.sh`.
 
-There are two main build types: native image build and QEMU container build. 
+There are two main build types: native image build and QEMU container build.
 
 ## Build the container
 
@@ -199,7 +219,7 @@ To build the QEMU container, set the `BRANCH` variable to the desired branch (e.
 - QEMU >= 6.2
 - sshpass (can be installed via `brew install sshpass` or `apt-get install sshpass`)
 
-### QEMU Container  Variables
+### QEMU Container Variables
 
 | Name                     | Description                                  | Default |
 | ------------------------ | -------------------------------------------- | ------- |
@@ -262,7 +282,7 @@ These are features that do not work when the container is run in rootless mode:
 
 Many thanks to the authors of the following projects:
 
-* https://github.com/theasp/docker-novnc
-* https://github.com/VirtualGL/virtualgl
-* https://github.com/TurboVNC/turbovnc
-* https://github.com/coder/coder
+- <https://github.com/theasp/docker-novnc>
+- <https://github.com/VirtualGL/virtualgl>
+- <https://github.com/TurboVNC/turbovnc>
+- <https://github.com/coder/coder>
