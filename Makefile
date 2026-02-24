@@ -19,8 +19,8 @@ ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd
 ARCHS    = amd64 arm64
 IMAGES   := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-%)
 IMAGES_QEMU := $(ARCHS:%=$(REGISTRY)/$(AUTHOR)/$(NAME)-qemu:$(TAG)-%)
-BRANCHES = featured/base featured/speit feature/speit-ai featured/dind featured/ros2 coder/base coder/lite jupyter/base jupyter/speit jupyter/speit-ai # order is important
-BRANCHES_ASCEND =  featured/base featured/speit-ascendai jupyter/base jupyter/speit-ascendai
+BRANCHES = featured/base featured/speit featured/speit-ai featured/dind coder/base coder/lite jupyter/base jupyter/speit-ai # order is important
+BRANCHES_ASCEND =  featured/base featured/speit-ai jupyter/base jupyter/speit-ai
 
 include scripts/make/docker.mk
 include scripts/make/qemu.mk
