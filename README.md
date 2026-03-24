@@ -7,13 +7,13 @@ The IDEKUBE project was initiated to provide an IDE container, facilitating deve
 
 The project is divided into three flavors: `featured`, `coder`, and `jupyter`. The `featured` flavor provides a full desktop environment (XFCE via noVNC) with Coder IDE. The `coder` flavor provides Coder IDE only. The `jupyter` flavor provides JupyterLab only. All flavors offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
 
-| Endpoint           | Service                  |
-| ------------------ | ------------------------ |
-| `/coder/`          | Coder service            |
-| `/jupyter/`        | Jupyter service          |
-| `/vnc/`            | noVNC service            |
-| `/vnc/websockify/` | noVNC websockify service |
-| `/ssh`             | Websocat-proxied SSH     |
+| Endpoint         | Service                  |
+| ---------------- | ------------------------ |
+| `/`              | Landing page (auto-detects available services) |
+| `/coder`         | Coder service            |
+| `/jupyter`       | Jupyter service          |
+| `/vnc`           | noVNC service            |
+| `/ssh`           | Websocat-proxied SSH     |
 
 The desktop environment supports hardware acceleration based on EGL (using VirtualGL), thus eliminating the need for /tmp/.X11-unix mapping. When the container runs on an NVIDIA runtime, it should load NVIDIA's OpenGL libraries and enable hardware acceleration. If the container is not configured with a GPU, it will switch to software rendering mode. The container has been tested in Kubernetes clusters with `nvidia-device-plugin`, WSL, and `nvidia-container-toolkit`, an external display is not required.
 
@@ -178,19 +178,19 @@ QEMU-wrapped images are published as `davidliyutong/idekube-container-qemu:<tag>
 
 ## Usage
 
-| URL/CMD                                                                                               | Service              | Note                      |
-| ----------------------------------------------------------------------------------------------------- | -------------------- | ------------------------- |
-| `$SCHEME://INGRESS_HOST$/coder/`                                                  | Coder service        | tailing slash is required |
-| `$SCHEME://INGRESS_HOST$/jupyter/`                                                | Jupyter service      | tailing slash is required |
-| `$SCHEME://INGRESS_HOST$/novnc/`                                                  | noVNC service        | tailing slash is required |
-| `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$/ssh/" idekube@idekube` | Websocat-proxied SSH |                           |
+| URL/CMD                                                                           | Service              |
+| --------------------------------------------------------------------------------- | -------------------- |
+| `$SCHEME://INGRESS_HOST$`                                                         | Landing page         |
+| `$SCHEME://INGRESS_HOST$/coder`                                                   | Coder service        |
+| `$SCHEME://INGRESS_HOST$/jupyter`                                                 | Jupyter service      |
+| `$SCHEME://INGRESS_HOST$/vnc`                                                     | noVNC service        |
+| `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$/ssh" idekube@idekube`  | Websocat-proxied SSH |
 
 ### Landing Page (`index.html`)
 
-The container ships a built-in Nginx landing page at `/`.
+The container ships a built-in Nginx landing page at `/` that auto-detects which services are available and only shows reachable entries.
 
-- It detects which services are reachable and only shows available entries.
-- It probes `/coder/`, `/jupyter/`, `/vnc/`, and checks WebSocket availability on `/ssh/`.
+- It probes `/coder`, `/jupyter`, `/vnc`, and checks WebSocket availability on `/ssh`.
 - The SSH card copies a ready-to-use `ProxyCommand` snippet for `websocat`.
 - It supports Chinese/English switch and dark/light theme, both persisted in `localStorage`.
 
@@ -201,9 +201,7 @@ Current landing-page files are:
 - `artifacts/docker/featured/rootfs/usr/share/nginx/html/index.html`
 - `artifacts/qemu/featured/rootfs/usr/share/nginx/html/index.html`
 
-If you deploy behind an ingress path prefix, make sure your ingress rewrites paths so the page can still reach `/coder/`, `/jupyter/`, `/vnc/`, and `/ssh/` correctly.
-
-> TODO: add supoprt for a goto URL query parameter, so the landing page can automatically redirect to a specific service.
+If you deploy behind an ingress path prefix, make sure your ingress rewrites paths so the page can still reach `/coder`, `/jupyter`, `/vnc`, and `/ssh` correctly.
 
 ### SSH Proxy
 
