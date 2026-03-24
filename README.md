@@ -5,7 +5,7 @@
 </div>
 The IDEKUBE project was initiated to provide an IDE container, facilitating development work within Kubernetes clusters. This is a continuously updated collection of containers, primarily used in scenarios such as robotics, simulations, machine learning, and education. The project has been utilized in courses at the Shanghai Jiao Tong University Paris Elite Institute of Technology (SPEIT).
 
-The project is divided into three branches: `coder` and `jupyter`, each offering IDE containers based on Coder and Jupyter respectively, and `featured`, which provides a desktop environment and Coder. All branches offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
+The project is divided into three flavors: `featured`, `coder`, and `jupyter`. The `featured` flavor provides a full desktop environment (XFCE via noVNC) with Coder IDE. The `coder` flavor provides Coder IDE only. The `jupyter` flavor provides JupyterLab only. All flavors offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
 
 | Endpoint           | Service                  |
 | ------------------ | ------------------------ |
@@ -43,7 +43,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: container-0
-          image: docker.io/davidliyutong/idekube-container:featured-base-v0.3.1
+          image: docker.io/davidliyutong/idekube-container:featured-base-v0.5.0
           env:
             - name: NVIDIA_DRIVER_CAPABILITIES # For Vulkan, OpenGL, NVEncode, etc, avoid manually mapping libs.
               value: all
@@ -79,7 +79,7 @@ However, it can also be used as a standalone container. The following is an exam
 ```yaml
 services:
   idekube_container:
-    image: davidliyutong/idekube-container:coder-base-v0.3.1
+    image: davidliyutong/idekube-container:featured-base-v0.5.0
     ports:
       - "3000:80"
     volumes:
@@ -109,11 +109,11 @@ You can monitor the CPU usage of the container with `htop`.
 
 ## Architecture Explained
 
-There are three flavors: `featured` with noVNC support and `jupyter`/`coder` without noVNC support.
+There are three flavors: `featured` with noVNC desktop support, `coder` with Coder IDE only, and `jupyter` with JupyterLab only.
 
 The container runs a `supervisord` process that starts services. A nginx server is used to reverse proxy the services.
 
-The `artifacts/$flavor/startup.sh` script is used to start the container. It configure the container according to environment variables and starts the `supervisord` process.
+The `artifacts/docker/startup-scripts/startup.sh` script is the shared entrypoint. It configures the container according to environment variables and starts the `supervisord` process.
 
 | Name                      | Description                                     | Default     |
 | ------------------------- | ----------------------------------------------- | ----------- |
@@ -133,6 +133,48 @@ If the environment variable `I_AM_INIT_CONTAINER` is set, the container will det
 If the directory `/rootfs` exists and is mounted from the host, the container will chroot into it and run the services there.
 
 > This feature requires the container to run in `privileged` mode.
+
+## Available Docker Image Tags
+
+Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliyutong/idekube-container). Images are tagged as `davidliyutong/idekube-container:<tag>-<version>`, where `<version>` is the git tag (e.g. `v0.5.0`). Multi-arch manifests (`amd64` and `arm64`) are available for each tag.
+
+### Standard Tags (base image: `ubuntu:24.04`)
+
+| Tag | Flavor | Description | Base |
+| --- | --- | --- | --- |
+| `featured-base` | featured | Full desktop (XFCE + noVNC) + Coder + SSH + Miniconda + VirtualGL + Chromium | `ubuntu:24.04` |
+| `featured-speit` | featured | `featured-base` + dev tools (gcc, clang, gdb, cmake) + Python scientific stack + Iverilog + Digital | `featured-base` |
+| `featured-speit-ai` | featured | `featured-base` + dev tools + PyTorch conda environment | `featured-base` |
+| `featured-dind` | featured | `featured-base` + Docker-in-Docker (dockerd, buildx, compose) | `featured-base` |
+| `featured-agent` | featured | `featured-base` + Node.js + opencode AI + openclaw agent | `featured-base` |
+| `featured-ros2` | featured | `featured-base` + ROS 2 Jazzy desktop-full + Gazebo + MoveIt | `featured-base` |
+| `coder-base` | coder | Coder IDE + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
+| `coder-lite` | coder | Coder IDE + SSH, minimal install (no Miniconda, no VGL) | `ubuntu:24.04` |
+| `jupyter-base` | jupyter | JupyterLab + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
+| `jupyter-speit-ai` | jupyter | `jupyter-base` + scientific stack + PyTorch conda environment | `jupyter-base` |
+
+### Ascend Tags (base image: `ascendai/cann`)
+
+Built with `make set_type TYPE=ascend`. Tags are suffixed with `-ascend`.
+
+| Tag | Description | Base |
+| --- | --- | --- |
+| `featured-base-ascend` | Full desktop with Ascend NPU support | `ascendai/cann` |
+| `featured-speit-ai-ascend` | Desktop + PyTorch with Ascend NPU | `featured-base-ascend` |
+| `jupyter-base-ascend` | JupyterLab with Ascend NPU support | `ascendai/cann` |
+| `jupyter-speit-ai-ascend` | JupyterLab + PyTorch with Ascend NPU | `jupyter-base-ascend` |
+
+### Additional Dockerfiles
+
+The following Dockerfiles exist but are not part of the default build targets:
+
+| Tag | Description |
+| --- | --- |
+| `jupyter-speit-ascendai` | Same as `jupyter-speit-ai` but specifically for Ascend AI base image |
+
+### QEMU Container Tags
+
+QEMU-wrapped images are published as `davidliyutong/idekube-container-qemu:<tag>-<version>`. These run a lightweight VM inside the container for workload isolation.
 
 ## Usage
 
@@ -175,9 +217,9 @@ Host idekube
 
 > If you have SSL enabled, you can use `wss` instead of `ws`.
 
-### Build Sysetem
+### Build System
 
-The project use Makefile to build the container. A script `scripts/shell/build_image.sh` is used to parse `.dockerargs` file and generate docker build arguments. Image produced are taged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$ARCH` etc. Mutli-arch build is supported with `docker buildx` via `scripts/shell/buildx_image.sh`.
+The project uses a Makefile to build containers. The script `scripts/shell/build_image.sh` parses the `.dockerargs` file and generates docker build arguments. Images are tagged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$GIT_TAG-$ARCH`. Multi-arch build is supported with `docker buildx` via `scripts/shell/buildx_image.sh`.
 
 There are two main build types: native image build and QEMU container build.
 
@@ -200,11 +242,11 @@ You can configure environment variables to control the build process. The follow
 | `APT_MIRROR`     | The apt mirror to use                                | `""`                  |
 | `USE_PIP_MIRROR` | Use pypi mirror for faster build if set to `true`    | `false`               |
 | `PIP_MIRROR_URL` | The pypi mirror to use                               | `""`                  |
-| `GIT_TAG`        | Use pypi mirror for faster build if set to `true`    | `false`               |
+| `GIT_TAG`        | Override the git tag used for image tagging           | auto-detected         |
 
 ### Ascend Support
 
-To build the container with Ascend support, use `make set_type TYPE=ascend` before building the container. This will set the necessary environment variables for Ascend support. For better naming, you can also set the `TAG_POSTFIX` variable to `-ascend`.
+To build the container with Ascend support, run `make set_type TYPE=ascend` before building. This switches `.dockerargs` and `.env` symlinks to the Ascend variants, which set the base image to `ascendai/cann` and append `-ascend` to image tags automatically. Use `make build_all_ascend` or `make buildx_all_ascend` to build only the Ascend-compatible branches.
 
 ## QEMU Container Build
 
@@ -272,10 +314,7 @@ These are features that do not work when the container is run in rootless mode:
 
 ## Roadmap
 
-- [ ] Add a new branch `jupyter/nlp` for NLP support
 - [ ] Test multus CNI for multiple network interfaces
-- [x] Find how to configure overlay fs for `/` persistency
-- [ ] Support for `ubuntu:20.04` and `ubuntu:22.04` base image
 - [ ] Support for Authorization Header
 
 ## Acknowledgement
