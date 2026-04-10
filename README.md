@@ -119,6 +119,7 @@ The `artifacts/docker/startup-scripts/startup.sh` script is the shared entrypoin
 | ------------------------- | ----------------------------------------------- | ----------- |
 | `IDEKUBE_INIT_HOME`       | any value if need to init home with /etc/skel/  | empty       |
 | `IDEKUBE_PREFERED_SHELL`  | path to shell                                   | `/bin/bash` |
+| `IDEKUBE_USER_UID`        | override the UID of the container user          | empty       |
 | `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                  | `""`        |
 | `I_AM_INIT_CONTAINER`     | any value if the container is an init container | empty       |
 

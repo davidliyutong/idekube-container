@@ -98,6 +98,27 @@ else
     HOME=/root
 fi
 
+# ------------------------------------------------------
+# response to IDEKUBE_USER_UID
+# ------------------------------------------------------
+if [ -n "${IDEKUBE_USER_UID:-}" ]; then
+    CURRENT_UID=$(id -u "$USER" 2>/dev/null)
+    if [ "$CURRENT_UID" != "$IDEKUBE_USER_UID" ]; then
+        echo "Changing UID of $USER from $CURRENT_UID to $IDEKUBE_USER_UID"
+        if usermod -u "$IDEKUBE_USER_UID" "$USER" 2>/dev/null; then
+            echo "UID changed successfully"
+            # Update ownership of home directory to match new UID
+            if [ -d "$HOME" ]; then
+                chown -R "$USER:$USER" "$HOME" 2>/dev/null || echo "Warning: Failed to update home ownership after UID change"
+            fi
+        else
+            echo "Warning: Failed to change UID for $USER"
+        fi
+    else
+        echo "UID of $USER is already $IDEKUBE_USER_UID"
+    fi
+fi
+
 # Remove any existing lock files
 rm -f /tmp/.X*-lock 2>/dev/null || true
 rm -f /tmp/.X11-unix/X* 2>/dev/null || true
@@ -161,9 +182,10 @@ fi
 # ------------------------------------------------------
 if [ ! -d "$HOME/.ssh" ]; then
     mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
-    if ! su - "$USER" -c "ssh-keygen -t rsa -N '' -f $HOME/.ssh/id_rsa" 2>/dev/null; then
+    if ! ssh-keygen -t rsa -N '' -f "$HOME/.ssh/id_rsa" -q 2>/dev/null; then
         echo "Warning: Failed to generate SSH key"
     fi
+    chown -R "$USER:$USER" "$HOME/.ssh"
 fi
 
 if [ -n "${IDEKUBE_AUTHORIZED_KEYS:-}" ]; then
