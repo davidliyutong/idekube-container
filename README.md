@@ -43,7 +43,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: container-0
-          image: docker.io/davidliyutong/idekube-container:featured-base-v0.5.0
+          image: docker.io/davidliyutong/idekube-container:featured-base-v0.6.0
           env:
             - name: NVIDIA_DRIVER_CAPABILITIES # For Vulkan, OpenGL, NVEncode, etc, avoid manually mapping libs.
               value: all
@@ -79,7 +79,7 @@ However, it can also be used as a standalone container. The following is an exam
 ```yaml
 services:
   idekube_container:
-    image: davidliyutong/idekube-container:featured-base-v0.5.0
+    image: davidliyutong/idekube-container:featured-base-v0.6.0
     ports:
       - "3000:80"
     volumes:
@@ -137,7 +137,7 @@ If the directory `/rootfs` exists and is mounted from the host, the container wi
 
 ## Available Docker Image Tags
 
-Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliyutong/idekube-container). Images are tagged as `davidliyutong/idekube-container:<tag>-<version>`, where `<version>` is the git tag (e.g. `v0.5.0`). Multi-arch manifests (`amd64` and `arm64`) are available for each tag.
+Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliyutong/idekube-container). Images are tagged as `davidliyutong/idekube-container:<tag>-<version>`, where `<version>` is the git tag (e.g. `v0.6.0`). Multi-arch manifests (`amd64` and `arm64`) are available for each tag.
 
 ### Standard Tags (base image: `ubuntu:24.04`)
 
@@ -147,12 +147,12 @@ Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliy
 | `featured-speit` | featured | `featured-base` + dev tools (gcc, clang, gdb, cmake) + Python scientific stack + Iverilog + Digital | `featured-base` |
 | `featured-speit-ai` | featured | `featured-base` + dev tools + PyTorch conda environment | `featured-base` |
 | `featured-dind` | featured | `featured-base` + Docker-in-Docker (dockerd, buildx, compose) | `featured-base` |
-| `featured-agent` | featured | `featured-base` + Node.js + opencode AI + openclaw agent | `featured-base` |
 | `featured-ros2` | featured | `featured-base` + ROS 2 Jazzy desktop-full + Gazebo + MoveIt | `featured-base` |
 | `coder-base` | coder | Coder IDE + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
 | `coder-lite` | coder | Coder IDE + SSH, minimal install (no Miniconda, no VGL) | `ubuntu:24.04` |
 | `jupyter-base` | jupyter | JupyterLab + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
 | `jupyter-speit-ai` | jupyter | `jupyter-base` + scientific stack + PyTorch conda environment | `jupyter-base` |
+| `agent-base` | agent | Standalone agent container: openclaw gateway + Claude Code + opencode + document toolchain (pandas/pdf/ocr/playwright/libreoffice). No desktop, no Coder, no Miniconda. Exposes `/agent` (openclaw), `/ssh` (websocat WS→SSH), and the landing page at `/`. | `ubuntu:24.04` |
 
 ### Ascend Tags (base image: `ascendai/cann`)
 

@@ -14,6 +14,7 @@ jobs:
                     "featured/base",
                     "coder/base",
                     "jupyter/base",
+                    "agent/base",
                 ]
         steps:
             - name: Checkout repository
