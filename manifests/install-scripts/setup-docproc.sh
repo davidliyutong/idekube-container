@@ -16,5 +16,8 @@ BROWSER_PACKAGES="playwright"
 
 pip install $PIP_FLAGS --no-cache-dir $DATA_PACKAGES $DOC_PACKAGES $UTIL_PACKAGES $BROWSER_PACKAGES
 
-# Install Playwright Chromium browser
+# Install Playwright Chromium browser into PLAYWRIGHT_BROWSERS_PATH
+# (a system-wide path so the unprivileged idekube user can launch it
+# even when /home/idekube is volume-mounted at runtime).
 playwright install --with-deps chromium
+[ -n "$PLAYWRIGHT_BROWSERS_PATH" ] && chmod -R go+rX "$PLAYWRIGHT_BROWSERS_PATH"
