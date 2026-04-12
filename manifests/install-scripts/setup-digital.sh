@@ -1,5 +1,12 @@
 echo "Setting Up Digital"
-wget https://github.com/hneemann/Digital/releases/latest/download/Digital.zip -O /tmp/Digital.zip
+
+DIGITAL_VERSION=${DIGITAL_VERSION:-latest}
+
+if [ "${DIGITAL_VERSION}" = "latest" ]; then
+    wget https://github.com/hneemann/Digital/releases/latest/download/Digital.zip -O /tmp/Digital.zip
+else
+    wget "https://github.com/hneemann/Digital/releases/download/v${DIGITAL_VERSION}/Digital.zip" -O /tmp/Digital.zip
+fi
 unzip /tmp/Digital.zip -d /opt/
 
 DESKTOP_FILE="#!/usr/bin/env xdg-open

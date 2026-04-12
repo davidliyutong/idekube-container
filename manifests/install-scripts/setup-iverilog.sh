@@ -6,17 +6,15 @@ echo "Setting Up iverilog"
 ARCH=$(uname -m)
 echo "ARCH: $ARCH"
 
-# Get version
-if [[ $# -gt 1 ]]; then
+# Get version: prefer IVERILOG_VERSION env var, then positional arg $2, then GitHub API
+if [[ -n "${IVERILOG_VERSION}" && "${IVERILOG_VERSION}" != "latest" ]]; then
+    VERSION="${IVERILOG_VERSION}"
+elif [[ $# -gt 1 ]]; then
     VERSION=$2
 else
-    VERSION=""
+    VERSION=$(curl -sL https://api.github.com/repos/steveicarus/iverilog/releases/latest | jq -r ".tag_name")
     if [[ ! -n $VERSION ]]; then
-        VERSION=$(curl -sL https://api.github.com/repos/steveicarus/iverilog/releases/latest | jq -r ".tag_name")
-    fi
-
-    if [[ ! -n $VERSION ]]; then
-        echo "Failed to get the latest version, fallback to 12_0"
+        echo "Failed to get the latest version, fallback to v12_0"
         VERSION="v12_0"
     fi
 fi

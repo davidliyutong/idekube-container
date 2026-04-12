@@ -1,4 +1,4 @@
-# Deploying `agent-base-v0.6.0` with Docker Compose
+# Deploying `agent-base-v0.6.2` with Docker Compose
 
 A minimal, no-keep-root deployment of the IDEKube agent image. It exposes
 only the openclaw gateway (`/agent`) and the web SSH endpoint (`/ssh`),
@@ -24,7 +24,7 @@ See [docker-compose.yaml](docker-compose.yaml):
 ```yaml
 services:
   idekube_container:
-    image: davidliyutong/idekube-container:agent-base-v0.6.0
+    image: davidliyutong/idekube-container:agent-base-v0.6.2
     ports:
       - "3000:80"
     volumes:
@@ -107,7 +107,7 @@ user, not by a stray UID.
 ```yaml
 services:
   idekube_container:
-    image: davidliyutong/idekube-container:agent-base-v0.6.0
+    image: davidliyutong/idekube-container:agent-base-v0.6.2
     ports:
       - "3000:80"
     volumes:

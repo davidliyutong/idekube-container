@@ -1,6 +1,6 @@
 services:
   idekube_container:
-    image: davidliyutong/idekube-container:featured-base-v0.6.0
+    image: davidliyutong/idekube-container:featured-base-v0.6.2
     ports:
       - "3000:80"
     privileged: true

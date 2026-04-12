@@ -8,6 +8,7 @@ ARG TZ=Asia/Shanghai \
     USE_APT_MIRROR="true" \
     TINI_VERSION=0.19.0 \
     WEBSOCAT_VERSION=1.13.0 \
+    MINICONDA_VERSION=latest \
     CODER_VERSION=4.7.0 \
     VIRTUALGL_VERSION=3.1 \
     TURBOVNC_VERSION=3.1
@@ -41,7 +42,7 @@ RUN --mount=type=bind,source=manifests/install-scripts/setup-code-server.sh,targ
 
 # Install Miniconda
 RUN --mount=type=bind,source=manifests/install-scripts/setup-miniconda.sh,target=/tmp/setup-miniconda.sh \
-    bash /tmp/setup-miniconda.sh
+    export MINICONDA_VERSION=${MINICONDA_VERSION}; bash /tmp/setup-miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Setup VGL

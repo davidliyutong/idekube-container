@@ -18,10 +18,8 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Configure Python environment
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
-RUN pip install -U pip && \
-    pip install --no-cache-dir sympy numpy matplotlib scipy scikit-learn networkx pandas pydot graphviz jupyter six && \
-    pip install --no-cache-dir symbtools ipydex ipython && \
-    pip install --no-cache-dir --no-build-isolation pycartan
+RUN --mount=type=bind,source=manifests/install-scripts/setup-speit-pip.sh,target=/tmp/setup-speit-pip.sh \
+    bash /tmp/setup-speit-pip.sh
 
 # Configure Python environment
 RUN conda create -n pytorch python=3.11 -y

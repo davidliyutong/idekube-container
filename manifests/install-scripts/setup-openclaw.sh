@@ -1,7 +1,17 @@
 #!/bin/bash
 set -e
 
-curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+OPENCLAW_VERSION=${OPENCLAW_VERSION:-latest}
+
+# Load nvm so npm is on PATH
+export NVM_DIR="/usr/local/nvm"
+. "$NVM_DIR/nvm.sh"
+
+if [ "${OPENCLAW_VERSION}" = "latest" ]; then
+    curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+else
+    curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard --version "${OPENCLAW_VERSION}"
+fi
 
 openclaw --version || true
 

@@ -7,7 +7,8 @@ ARG TZ=Asia/Shanghai \
     WEBSOCAT_VERSION=1.13.0 \
     APT_MIRROR="mirror.sjtu.edu.cn" \
     USE_APT_MIRROR="false" \
-    TINI_VERSION=0.19.0
+    TINI_VERSION=0.19.0 \
+    MINICONDA_VERSION=latest
 
 # Avoid prompts for time zone
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -34,7 +35,7 @@ RUN --mount=type=bind,source=manifests/install-scripts/setup-websocat-ssh.sh,tar
 
 # Install Miniconda
 RUN --mount=type=bind,source=manifests/install-scripts/setup-miniconda.sh,target=/tmp/setup-miniconda.sh \
-    bash /tmp/setup-miniconda.sh
+    export MINICONDA_VERSION=${MINICONDA_VERSION}; bash /tmp/setup-miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Install Jupyter
