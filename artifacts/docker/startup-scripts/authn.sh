@@ -19,7 +19,7 @@ if [ -n "${IDEKUBE_ACCESS_TOKEN:-}" ]; then
     fi
 
     echo "Configuring nginx access token authentication"
-    sed -i "s/__IDEKUBE_ACCESS_TOKEN_PLACEHOLDER__/${IDEKUBE_ACCESS_TOKEN}/g" "$CONF"
+    sed -i "s|__IDEKUBE_ACCESS_TOKEN_PLACEHOLDER__|${IDEKUBE_ACCESS_TOKEN}|g" "$CONF"
     echo "Access token authentication configured"
 else
     echo "IDEKUBE_ACCESS_TOKEN is not set, allowing all requests"

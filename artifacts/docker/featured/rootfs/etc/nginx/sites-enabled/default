@@ -20,7 +20,7 @@ server {
     location = /_idekube_set_cookie {
         internal;
         add_header Set-Cookie "idekube_container_access_token=$__idekube_token_from_arg; Path=/; Max-Age=86400; SameSite=Lax";
-        return 302 $scheme://$http_host$__idekube_original_uri;
+        return 302 $scheme://$http_host$__idekube_original_uri?;
     }
 
     location = /_idekube_auth {
