@@ -205,6 +205,11 @@ chown -R "$USER:$USER" "$HOME/.ssh" 2>/dev/null || echo "Warning: Failed to chan
 
 
 # ------------------------------------------------------
+# response to IDEKUBE_ACCESS_TOKEN
+# ------------------------------------------------------
+bash /authn.sh
+
+# ------------------------------------------------------
 # Detect all startup bash scripts and run them
 # ------------------------------------------------------
 # Find all scripts in /etc/idekube/, sort them by name

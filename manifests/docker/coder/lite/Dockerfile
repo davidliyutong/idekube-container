@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG BASE_IMAGE=ubuntu:24.04
 FROM ${BASE_IMAGE} AS system
 
@@ -13,9 +14,6 @@ ARG TZ=Asia/Shanghai \
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=${TZ}
 
-# Copy the install scripts
-COPY manifests/install-scripts/ /tmp/install-scripts/
-
 # Change APT Source
 RUN if [ ${USE_APT_MIRROR} != "false" ]; then \
         sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
@@ -24,19 +22,24 @@ RUN if [ ${USE_APT_MIRROR} != "false" ]; then \
     fi;
 
 # built-in packages
-RUN bash /tmp/install-scripts/setup-packages-lite.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-packages-lite.sh,target=/tmp/setup-packages-lite.sh \
+    bash /tmp/setup-packages-lite.sh
 
 # tini to fix subreap
-RUN export TINI_VERSION=${TINI_VERSION}; bash /tmp/install-scripts/setup-tini-lite.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-tini-lite.sh,target=/tmp/setup-tini-lite.sh \
+    export TINI_VERSION=${TINI_VERSION}; bash /tmp/setup-tini-lite.sh
 
 # Setup the websocat and ssh
-RUN export WEBSOCAT_VERSION=${WEBSOCAT_VERSION}; bash /tmp/install-scripts/setup-websocat-ssh.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-websocat-ssh.sh,target=/tmp/setup-websocat-ssh.sh \
+    export WEBSOCAT_VERSION=${WEBSOCAT_VERSION}; bash /tmp/setup-websocat-ssh.sh
 
 # Setup the code-server
-RUN export CODER_VERSION=${CODER_VERSION}; bash /tmp/install-scripts/setup-code-server.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-code-server.sh,target=/tmp/setup-code-server.sh \
+    export CODER_VERSION=${CODER_VERSION}; bash /tmp/setup-code-server.sh
 
 # Create the IDEKube user with home and bash shell
-RUN bash /tmp/install-scripts/setup-user.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-user.sh,target=/tmp/setup-user.sh \
+    bash /tmp/setup-user.sh
 ENV SHELL=/bin/bash \
     USERNAME=idekube \
     USERID=1000
@@ -44,6 +47,7 @@ ENV SHELL=/bin/bash \
 # Setup the root filesystem
 COPY artifacts/docker/coder/rootfs /
 COPY artifacts/docker/startup-scripts /
+COPY frontend/dist/ /usr/share/nginx/html/
 
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

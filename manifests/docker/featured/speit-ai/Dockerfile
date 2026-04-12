@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # These arguments are passed in via the docker build command
 ARG REGISTRY=docker.io \
     AUTHOR=davidliyutong \
@@ -26,7 +27,7 @@ RUN . /opt/miniconda3/etc/profile.d/conda.sh && conda activate && \
 
 SHELL ["conda", "run", "-n", "pytorch", "/bin/bash", "-c"]
 
-COPY manifests/install-scripts/setup-ml-env.sh /tmp/setup-ml-env.sh
-RUN bash /tmp/setup-ml-env.sh && rm /tmp/setup-ml-env.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-ml-env.sh,target=/tmp/setup-ml-env.sh \
+    bash /tmp/setup-ml-env.sh
 
 SHELL ["/bin/bash", "-c"]

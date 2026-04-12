@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG BASE_IMAGE=ubuntu:24.04
 FROM ${BASE_IMAGE} AS system
 
@@ -15,9 +16,6 @@ ARG TZ=Asia/Shanghai \
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=${TZ}
 
-# Copy the install scripts
-COPY manifests/install-scripts/ /tmp/install-scripts/
-
 # Change APT Source
 RUN if [ ${USE_APT_MIRROR} != "false" ]; then \
         sed -i s@/archive.ubuntu.com/@/${APT_MIRROR}/@g /etc/apt/sources.list && \
@@ -26,34 +24,43 @@ RUN if [ ${USE_APT_MIRROR} != "false" ]; then \
     fi;
 
 # built-in packages
-RUN bash /tmp/install-scripts/setup-packages.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-packages.sh,target=/tmp/setup-packages.sh \
+    bash /tmp/setup-packages.sh
 
 # tini to fix subreap
-RUN export TINI_VERSION=${TINI_VERSION}; bash /tmp/install-scripts/setup-tini.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-tini.sh,target=/tmp/setup-tini.sh \
+    export TINI_VERSION=${TINI_VERSION}; bash /tmp/setup-tini.sh
 
 # Setup the websocat and ssh
-RUN export WEBSOCAT_VERSION=${WEBSOCAT_VERSION}; bash /tmp/install-scripts/setup-websocat-ssh.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-websocat-ssh.sh,target=/tmp/setup-websocat-ssh.sh \
+    export WEBSOCAT_VERSION=${WEBSOCAT_VERSION}; bash /tmp/setup-websocat-ssh.sh
 
 # Setup the code-server
-RUN export CODER_VERSION=${CODER_VERSION}; bash /tmp/install-scripts/setup-code-server.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-code-server.sh,target=/tmp/setup-code-server.sh \
+    export CODER_VERSION=${CODER_VERSION}; bash /tmp/setup-code-server.sh
 
 # Install Miniconda
-RUN bash /tmp/install-scripts/setup-miniconda.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-miniconda.sh,target=/tmp/setup-miniconda.sh \
+    bash /tmp/setup-miniconda.sh
 ENV PATH=/opt/miniconda3/bin:$PATH
 
 # Setup VGL
-RUN bash /tmp/install-scripts/setup-vgl.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-vgl.sh,target=/tmp/setup-vgl.sh \
+    bash /tmp/setup-vgl.sh
 ENV NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=all
 
 # Desktop
-RUN bash /tmp/install-scripts/setup-desktop.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-desktop.sh,target=/tmp/setup-desktop.sh \
+    bash /tmp/setup-desktop.sh
 
 # Install the Chromium with ppa:xtradeb/apps
-RUN bash /tmp/install-scripts/setup-chromium.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-chromium.sh,target=/tmp/setup-chromium.sh \
+    bash /tmp/setup-chromium.sh
 
 # Install TurboVNC and VirtualGL, must done after the desktop
-RUN	bash /tmp/install-scripts/setup-vnc.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-vnc.sh,target=/tmp/setup-vnc.sh \
+    bash /tmp/setup-vnc.sh
 ENV PATH=$PATH:/opt/VirtualGL/bin:/opt/TurboVNC/bin \
     VGL_DISPLAY=egl \
     VNC_THREADS=2 \
@@ -64,7 +71,8 @@ RUN git clone --depth 1 --branch v1.5.0 https://github.com/novnc/noVNC.git /var/
     git clone --depth 1 --branch v0.12.0 https://github.com/novnc/websockify.git /var/lib/novnc/utils/websockify
 
 # Create the IDEKube user with home and bash shell
-RUN bash /tmp/install-scripts/setup-user.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-user.sh,target=/tmp/setup-user.sh \
+    bash /tmp/setup-user.sh
 ENV SHELL=/bin/bash \
     USERNAME=idekube \
     USERID=1000
@@ -72,6 +80,7 @@ ENV SHELL=/bin/bash \
 # Setup the root filesystem
 COPY artifacts/docker/featured/rootfs /
 COPY artifacts/docker/startup-scripts /
+COPY frontend/dist/ /usr/share/nginx/html/
 
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

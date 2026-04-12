@@ -2,6 +2,35 @@ server {
     listen 80;
     listen [::]:80;
 
+    set $__idekube_original_uri $uri;
+    if ($__idekube_token_arg_ok = 1) {
+        rewrite ^ /_idekube_set_cookie last;
+    }
+
+    error_page 401 /401.html;
+    error_page 404 @fallback_to_home;
+    location = /401.html {
+        internal;
+        root /usr/share/nginx/html;
+    }
+    location @fallback_to_home {
+        return 302 $scheme://$http_host/;
+    }
+
+    location = /_idekube_set_cookie {
+        internal;
+        add_header Set-Cookie "idekube_container_access_token=$__idekube_token_from_arg; Path=/; Max-Age=86400; SameSite=Lax";
+        return 302 $scheme://$http_host$__idekube_original_uri?;
+    }
+
+    location = /_idekube_auth {
+        internal;
+        if ($idekube_access_permitted = 1) {
+            return 200;
+        }
+        return 401;
+    }
+
     # openclaw agent gateway (HTTP UI + WebSocket).
     # Preserve-prefix proxy: openclaw is configured with
     # gateway.controlUi.basePath=/agent, so it serves both the HTML and
@@ -11,6 +40,7 @@ server {
     # `/agent/...` (HTML, assets, REST). nginx forwards the URI as-is
     # because the proxy_pass URL has no path component.
     location /agent {
+        auth_request /_idekube_auth;
         proxy_pass http://127.0.0.1:18789;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -24,7 +54,22 @@ server {
         client_max_body_size 0;
     }
 
-    # SSH via Websocat
+    # Web terminal via ttyd
+    location /terminal {
+        auth_request /_idekube_auth;
+        proxy_pass http://127.0.0.1:7681;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_read_timeout 86400;
+        client_max_body_size 0;
+    }
+
+    # SSH via Websocat (excluded from token auth — uses SSH pubkey auth)
     location = /ssh {
         proxy_pass http://127.0.0.1:2222/;
         proxy_http_version 1.1;
@@ -44,6 +89,7 @@ server {
 
     # Landing page
     location = / {
+        auth_request /_idekube_auth;
         root /usr/share/nginx/html;
         index index.html;
     }
