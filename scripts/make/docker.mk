@@ -6,6 +6,7 @@
 DEPS_featured/speit          := featured/base
 DEPS_featured/speit-ai       := featured/base
 DEPS_featured/dind           := featured/base
+DEPS_featured/kathara        := featured/dind
 DEPS_featured/ros2           := featured/base
 DEPS_jupyter/speit-ai        := jupyter/base
 DEPS_jupyter/speit-ascendai  := jupyter/base
