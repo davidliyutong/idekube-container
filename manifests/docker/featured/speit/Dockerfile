@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # These arguments are passed in via the docker build command
 ARG REGISTRY=docker.io \
     AUTHOR=davidliyutong \
@@ -32,9 +33,9 @@ RUN . /opt/miniconda3/etc/profile.d/conda.sh && conda activate && \
     pip install --no-cache-dir --no-build-isolation pycartan
 
 ## Install iverilog
-COPY manifests/install-scripts/setup-iverilog.sh /tmp/setup-iverilog.sh
-RUN /bin/bash /tmp/setup-iverilog.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-iverilog.sh,target=/tmp/setup-iverilog.sh \
+    /bin/bash /tmp/setup-iverilog.sh
 
 ## Install Digital
-COPY manifests/install-scripts/setup-digital.sh /tmp/setup-digital.sh
-RUN /bin/bash /tmp/setup-digital.sh
+RUN --mount=type=bind,source=manifests/install-scripts/setup-digital.sh,target=/tmp/setup-digital.sh \
+    /bin/bash /tmp/setup-digital.sh

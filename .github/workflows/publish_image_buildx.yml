@@ -6,8 +6,29 @@ on:
         types: [published]
 
 jobs:
+    frontend:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+
+            - name: Build frontend
+              run: make frontend
+
+            - name: Upload frontend dist
+              uses: actions/upload-artifact@v4
+              with:
+                  name: frontend-dist
+                  path: frontend/dist/
+
     publish-base:
         runs-on: ubuntu-latest
+        needs: frontend
         strategy:
             matrix:
                 branch: [
@@ -18,9 +39,15 @@ jobs:
                 ]
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
-            - name: Change BASE_IMAGE to Ascend
+            - name: Download frontend dist
+              uses: actions/download-artifact@v4
+              with:
+                  name: frontend-dist
+                  path: frontend/dist/
+
+            - name: Set build type
               run: |
                   make set_type TYPE=base
 
@@ -53,9 +80,15 @@ jobs:
                 ]
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
-            - name: Change BASE_IMAGE to Ascend
+            - name: Download frontend dist
+              uses: actions/download-artifact@v4
+              with:
+                  name: frontend-dist
+                  path: frontend/dist/
+
+            - name: Set build type
               run: |
                   make set_type TYPE=base
 

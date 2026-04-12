@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # These arguments are passed in via the docker build command
 ARG REGISTRY=docker.io \
     AUTHOR=davidliyutong \
@@ -25,8 +26,8 @@ RUN pip install -U pip && \
 # Configure Python environment
 RUN conda create -n pytorch python=3.11 -y
 SHELL ["conda", "run", "-n", "pytorch", "/bin/bash", "-c"]
-COPY manifests/install-scripts/setup-ml-env.sh /tmp/setup-ml-env.sh
-RUN bash /tmp/setup-ml-env.sh && rm /tmp/setup-ml-env.sh && \
+RUN --mount=type=bind,source=manifests/install-scripts/setup-ml-env.sh,target=/tmp/setup-ml-env.sh \
+    bash /tmp/setup-ml-env.sh && \
     pip install ipykernel && \
     python -m ipykernel install --name pytorch --display-name "Python (pytorch)" && \
     rm -rf /opt/miniconda3/envs/pytorch/share/jupyter/kernels/

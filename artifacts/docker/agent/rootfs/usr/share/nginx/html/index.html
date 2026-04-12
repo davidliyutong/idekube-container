@@ -379,6 +379,10 @@
                             name: "Agent Gateway",
                             description: "openclaw-backed agent API and web UI",
                         },
+                        terminal: {
+                            name: "Web Terminal",
+                            description: "Browser-based terminal access",
+                        },
                     },
                 },
                 zh: {
@@ -407,6 +411,10 @@
                         agent: {
                             name: "Agent 网关",
                             description: "openclaw 驱动的 Agent API 与 Web UI",
+                        },
+                        terminal: {
+                            name: "Web 终端",
+                            description: "浏览器中的终端访问",
                         },
                     },
                 },
@@ -481,6 +489,9 @@
                 agent: {
                     icon: "🤖",
                 },
+                terminal: {
+                    icon: "🖥️",
+                },
             };
 
             // Detect available services by checking endpoints
@@ -506,9 +517,10 @@
                                 };
                             });
                         } else {
-                            // Use GET for other services to avoid 405 Method Not Allowed
+                            // Follow redirects normally; if the response was
+                            // redirected (404 → fallback to /), the service is absent.
                             const response = await fetch(`/${path}/`, { method: "GET" });
-                            if (response.ok || response.status === 401 || response.status === 403) {
+                            if (!response.redirected && (response.ok || response.status === 401 || response.status === 403)) {
                                 available = true;
                             }
                         }
@@ -599,12 +611,19 @@
             // Initialize
             detectServices().then(renderServices);
 
-            // Clean URL query params
-            if (window.location.search) {
-                const url = new URL(window.location.href);
-                url.search = "";
-                window.history.replaceState({}, document.title, url.toString());
-            }
+            // Persist access token as cookie, then clean URL
+            (function () {
+                const params = new URLSearchParams(window.location.search);
+                const token = params.get("idekube-container-access-token");
+                if (token) {
+                    document.cookie = "idekube_container_access_token=" + encodeURIComponent(token) + "; path=/; max-age=86400; samesite=lax";
+                }
+                if (window.location.search) {
+                    const url = new URL(window.location.href);
+                    url.search = "";
+                    window.history.replaceState({}, document.title, url.toString());
+                }
+            })();
         </script>
     </body>
 </html>

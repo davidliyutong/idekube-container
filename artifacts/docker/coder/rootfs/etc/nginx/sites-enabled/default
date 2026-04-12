@@ -2,12 +2,51 @@ server {
     listen 80;
     listen [::]:80;
 
+    # When token arrives via query param, save the original path then rewrite
+    # to an internal endpoint that sets the cookie and redirects to the clean
+    # URL. This avoids "add_header" in server-level "if" (not allowed by nginx).
+    set $__idekube_original_uri $uri;
+    if ($__idekube_token_arg_ok = 1) {
+        rewrite ^ /_idekube_set_cookie last;
+    }
+
+    error_page 401 /401.html;
+    error_page 404 @fallback_to_home;
+    location = /401.html {
+        internal;
+        root /usr/share/nginx/html;
+    }
+    location @fallback_to_home {
+        return 302 $scheme://$http_host/;
+    }
+
+    # Persist query-param token as a cookie, then redirect to the clean path.
+    location = /_idekube_set_cookie {
+        internal;
+        add_header Set-Cookie "idekube_container_access_token=$__idekube_token_from_arg; Path=/; Max-Age=86400; SameSite=Lax";
+        return 302 $scheme://$http_host$__idekube_original_uri;
+    }
+
+    # Internal auth check endpoint for auth_request.
+    # Returns 200 when access is permitted, 401 otherwise.
+    # Uses auth_request instead of "if" inside location blocks to avoid
+    # breaking proxy_pass and WebSocket upgrades ("if is evil" in nginx).
+    location = /_idekube_auth {
+        internal;
+        if ($idekube_access_permitted = 1) {
+            return 200;
+        }
+        return 401;
+    }
+
     # Coder
     location = /coder {
+        auth_request /_idekube_auth;
         absolute_redirect off;
         return 301 /coder/;
     }
     location ~ ^/coder/(.*)$ {
+        auth_request /_idekube_auth;
         proxy_pass http://127.0.0.1:3000/$1$is_args$args;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -21,7 +60,7 @@ server {
         client_max_body_size 0;
     }
 
-    # SSH via Websocat
+    # SSH via Websocat (excluded from token auth — uses SSH pubkey auth)
     location = /ssh {
         proxy_pass http://127.0.0.1:2222/;
         proxy_http_version 1.1;
@@ -41,6 +80,7 @@ server {
 
     # Landing page
     location = / {
+        auth_request /_idekube_auth;
         root /usr/share/nginx/html;
         index index.html;
     }
