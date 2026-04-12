@@ -1,12 +1,17 @@
 services:
   idekube_container:
-    image: davidliyutong/idekube-container:coder-lite-v0.6.1
+    image: davidliyutong/idekube-container:featured-base-v0.6.0
     ports:
       - "3000:80"
     volumes:
       - ./data:/home/idekube
     environment:
       - IDEKUBE_PREFERED_SHELL=/bin/zsh
-      - IDEKUBE_AUTHORIZED_KEYS=c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSUNWUkFWRDBCZW1VQUhsUVFTMExNT1JOV2JmQWlLN2loVk9TcWdiK29EbDYgbGl5dXRvbmdNYXN0ZXIK
-      - IDEKUBE_ACCESS_TOKEN=test
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
     ipc: host

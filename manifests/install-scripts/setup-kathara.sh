@@ -5,18 +5,25 @@ set -euo pipefail
 
 NETCAP_VERSION="${NETCAP_VERSION:-v0.6.11}"
 
-# Add Kathara PPA and install kathara + network tools
-apt-get update
-add-apt-repository -y ppa:katharaframework/kathara
+# Install common network tools (available on all architectures)
 apt-get update
 apt-get install -y --no-install-recommends \
-    kathara \
     xterm \
     wireshark \
     iperf \
     iperf3 \
     netcat-traditional \
     tcpdump
+
+# Install Kathara (PPA is amd64-only)
+arch="$(uname -m)"
+if [ "$arch" = "x86_64" ]; then
+    add-apt-repository -y ppa:katharaframework/kathara
+    apt-get update
+    apt-get install -y --no-install-recommends kathara
+else
+    echo "Skipping Kathara install (PPA unavailable for arch: $arch)"
+fi
 
 # Install netcap (amd64 only)
 arch="$(uname -m)"
