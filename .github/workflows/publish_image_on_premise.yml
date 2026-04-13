@@ -1,72 +1,163 @@
-name: Docker Build and Publish
+name: Build and Publish (On-Premise)
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
+    inputs:
+      lineup:
+        description: "Lineup to build"
+        type: choice
+        options:
+          - base
+          - ascend
+        default: base
 
 jobs:
-    frontend:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 22
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-            - name: Build frontend
-              run: make frontend
+      - name: Build frontend
+        run: make frontend
 
-            - name: Upload frontend dist
-              uses: actions/upload-artifact@v4
-              with:
-                  name: frontend-dist
-                  path: frontend/dist/
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
 
-    build-and-push:
-        runs-on: [self-hosted, "${{ matrix.os }}"]
-        needs: frontend
-        strategy:
-            matrix:
-                os: [ubuntu-latest, macos-latest]
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      tier0: ${{ steps.gen.outputs.tier0 }}
+      tier1: ${{ steps.gen.outputs.tier1 }}
+      tier2: ${{ steps.gen.outputs.tier2 }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Download frontend dist
-              uses: actions/download-artifact@v4
-              with:
-                  name: frontend-dist
-                  path: frontend/dist/
+      - name: Generate build matrix
+        id: gen
+        run: |
+          MATRIX=$(python3 build.py ci-matrix-native --lineup=${{ inputs.lineup }})
+          echo "tier0=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier0",[])))')" >> "$GITHUB_OUTPUT"
+          echo "tier1=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier1",[])))')" >> "$GITHUB_OUTPUT"
+          echo "tier2=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier2",[])))')" >> "$GITHUB_OUTPUT"
 
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v2
-              with:
-                  username: ${{ secrets.DOCKER_USERNAME }}
-                  password: ${{ secrets.DOCKER_PASSWORD }}
+  build-tier0:
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+    needs: [frontend, matrix]
+    if: needs.matrix.outputs.tier0 != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        branch: ${{ fromJson(needs.matrix.outputs.tier0) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Install vcs
-              run: |
-                sudo apt-get install -y python3-pip && pip3 install vcstool
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
 
-            - name: Run make publish_all
-              run: |
-                  make publish_all
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    publish:
-        runs-on: ubuntu-latest
-        needs: build-and-push
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+      - name: Build and push ${{ matrix.branch }} (${{ matrix.arch }})
+        run: |
+          python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
+          python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
+        continue-on-error: true
 
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v2
-              with:
-                  username: ${{ secrets.DOCKER_USERNAME }}
-                  password: ${{ secrets.DOCKER_PASSWORD }}
+  build-tier1:
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+    needs: [frontend, matrix, build-tier0]
+    if: needs.matrix.outputs.tier1 != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        branch: ${{ fromJson(needs.matrix.outputs.tier1) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Run make manifest
-              run: |
-                  make manifest_all && make rmmanifest_all
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push ${{ matrix.branch }} (${{ matrix.arch }})
+        run: |
+          python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
+          python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
+        continue-on-error: true
+
+  build-tier2:
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+    needs: [frontend, matrix, build-tier1]
+    if: needs.matrix.outputs.tier2 != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        branch: ${{ fromJson(needs.matrix.outputs.tier2) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push ${{ matrix.branch }} (${{ matrix.arch }})
+        run: |
+          python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
+          python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
+        continue-on-error: true
+
+  manifest:
+    runs-on: ubuntu-latest
+    needs: [build-tier0, build-tier1, build-tier2]
+    if: ${{ always() && (needs.build-tier0.result == 'success' || needs.build-tier1.result == 'success' || needs.build-tier2.result == 'success') }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create manifests and clean up per-arch tags
+        run: |
+          python3 build.py manifest-all --lineup=${{ inputs.lineup }}
+          python3 build.py rmmanifest-all --lineup=${{ inputs.lineup }}

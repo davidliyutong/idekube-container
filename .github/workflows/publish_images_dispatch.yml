@@ -1,0 +1,81 @@
+name: Docker Build and Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      lineup:
+        description: "Lineup to build"
+        type: choice
+        options:
+          - base
+          - ascend
+          - all
+        default: base
+      branch:
+        description: "Single image to build (e.g. featured/base). Leave empty to build all."
+        type: string
+        default: ""
+  release:
+    types: [published]
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build frontend
+        run: make frontend
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+  # --- Single-image mode: build just one flavor ---
+  publish-single:
+    runs-on: ubuntu-latest
+    needs: frontend
+    if: ${{ inputs.branch != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish ${{ inputs.branch }} (${{ inputs.lineup }})
+        run: python3 build.py publishx ${{ inputs.branch }} --lineup=${{ inputs.lineup }}
+
+  # --- Full-lineup mode: build all images ---
+  publish-base:
+    needs: frontend
+    if: ${{ inputs.branch == '' && (github.event_name == 'release' || inputs.lineup == 'base' || inputs.lineup == 'all') }}
+    uses: ./.github/workflows/publish_images.yml
+    with:
+      lineup: base
+    secrets: inherit
+
+  publish-ascend:
+    needs: frontend
+    if: ${{ inputs.branch == '' && (github.event_name == 'release' || inputs.lineup == 'ascend' || inputs.lineup == 'all') }}
+    uses: ./.github/workflows/publish_images.yml
+    with:
+      lineup: ascend
+    secrets: inherit
