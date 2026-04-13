@@ -2,15 +2,47 @@ server {
     listen 80;
     listen [::]:80;
 
+    set $__idekube_original_uri $uri;
+    if ($__idekube_token_arg_ok = 1) {
+        rewrite ^ /_idekube_set_cookie last;
+    }
+
+    error_page 401 /401.html;
+    error_page 404 @fallback_to_home;
+    location = /401.html {
+        internal;
+        root /usr/share/nginx/html;
+    }
+    location @fallback_to_home {
+        return 302 $scheme://$http_host/;
+    }
+
+    location = /_idekube_set_cookie {
+        internal;
+        add_header Set-Cookie "idekube_container_access_token=$__idekube_token_from_arg; Path=/; Max-Age=86400; SameSite=Lax";
+        return 302 $scheme://$http_host$__idekube_original_uri?;
+    }
+
+    location = /_idekube_auth {
+        internal;
+        if ($idekube_access_permitted = 1) {
+            return 200;
+        }
+        return 401;
+    }
+
     # VNC via noVNC
     location = /vnc {
+        auth_request /_idekube_auth;
         absolute_redirect off;
         return 301 /vnc/;
     }
     location ~ ^/vnc/(.*)$ {
+        auth_request /_idekube_auth;
         proxy_pass http://127.0.0.1:6081/$1;
     }
     location = /vnc/websockify {
+        auth_request /_idekube_auth;
         proxy_pass http://127.0.0.1:6081/websockify;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -20,10 +52,12 @@ server {
 
     # Coder
     location = /coder {
+        auth_request /_idekube_auth;
         absolute_redirect off;
         return 301 /coder/;
     }
     location ~ ^/coder/(.*)$ {
+        auth_request /_idekube_auth;
         proxy_pass http://127.0.0.1:3000/$1$is_args$args;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -37,7 +71,7 @@ server {
         client_max_body_size 0;
     }
 
-    # SSH via Websocat
+    # SSH via Websocat (excluded from token auth — uses SSH pubkey auth)
     location = /ssh {
         proxy_pass http://127.0.0.1:2222/;
         proxy_http_version 1.1;
@@ -57,6 +91,7 @@ server {
 
     # Landing page
     location = / {
+        auth_request /_idekube_auth;
         root /usr/share/nginx/html;
         index index.html;
     }
