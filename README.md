@@ -5,7 +5,7 @@
 </div>
 The IDEKUBE project was initiated to provide an IDE container, facilitating development work within Kubernetes clusters. This is a continuously updated collection of containers, primarily used in scenarios such as robotics, simulations, machine learning, and education. The project has been utilized in courses at the Shanghai Jiao Tong University Paris Elite Institute of Technology (SPEIT).
 
-The project is divided into three flavors: `featured`, `coder`, and `jupyter`. The `featured` flavor provides a full desktop environment (XFCE via noVNC) with Coder IDE. The `coder` flavor provides Coder IDE only. The `jupyter` flavor provides JupyterLab only. All flavors offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
+The project is divided into four flavors: `featured`, `coder`, `jupyter`, and `agent`. The `featured` flavor provides a full desktop environment (XFCE via noVNC) with Coder IDE. The `coder` flavor provides Coder IDE only. The `jupyter` flavor provides JupyterLab only. The `agent` flavor provides an AI agent toolchain with openclaw gateway, ttyd web terminal, and SSH. All flavors offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
 
 | Endpoint         | Service                  |
 | ---------------- | ------------------------ |
@@ -13,6 +13,8 @@ The project is divided into three flavors: `featured`, `coder`, and `jupyter`. T
 | `/coder`         | Coder service            |
 | `/jupyter`       | Jupyter service          |
 | `/vnc`           | noVNC service            |
+| `/agent`         | openclaw agent gateway   |
+| `/terminal`      | ttyd web terminal        |
 | `/ssh`           | Websocat-proxied SSH     |
 
 The desktop environment supports hardware acceleration based on EGL (using VirtualGL), thus eliminating the need for /tmp/.X11-unix mapping. When the container runs on an NVIDIA runtime, it should load NVIDIA's OpenGL libraries and enable hardware acceleration. If the container is not configured with a GPU, it will switch to software rendering mode. The container has been tested in Kubernetes clusters with `nvidia-device-plugin`, WSL, and `nvidia-container-toolkit`, an external display is not required.
@@ -109,7 +111,7 @@ You can monitor the CPU usage of the container with `htop`.
 
 ## Architecture Explained
 
-There are three flavors: `featured` with noVNC desktop support, `coder` with Coder IDE only, and `jupyter` with JupyterLab only.
+There are four flavors: `featured` with noVNC desktop support, `coder` with Coder IDE only, `jupyter` with JupyterLab only, and `agent` with openclaw agent gateway + ttyd web terminal.
 
 The container runs a `supervisord` process that starts services. A nginx server is used to reverse proxy the services.
 
@@ -121,6 +123,7 @@ The `artifacts/docker/startup-scripts/startup.sh` script is the shared entrypoin
 | `IDEKUBE_PREFERED_SHELL`  | path to shell                                   | `/bin/bash` |
 | `IDEKUBE_USER_UID`        | override the UID of the container user          | empty       |
 | `IDEKUBE_AUTHORIZED_KEYS` | base64 encoded authorized keys                  | `""`        |
+| `IDEKUBE_ACCESS_TOKEN`    | optional access token for nginx-level web auth (excludes `/ssh`). Accepts token via query param `idekube-container-access-token`, cookie `idekube_container_access_token`, or header `X-IDEKUBE-Container-Access-Token` | empty |
 | `I_AM_INIT_CONTAINER`     | any value if the container is an init container | empty       |
 
 > If running with url prefix `IDEKUBE_INGRESS_PATH`, please use ingress re-write rules to strip the prefix. Direct support for `IDEKUBE_INGRESS_PATH` has been removed to simplify the codebase.
@@ -147,12 +150,13 @@ Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliy
 | `featured-speit` | featured | `featured-base` + dev tools (gcc, clang, gdb, cmake) + Python scientific stack + Iverilog + Digital | `featured-base` |
 | `featured-speit-ai` | featured | `featured-base` + dev tools + PyTorch conda environment | `featured-base` |
 | `featured-dind` | featured | `featured-base` + Docker-in-Docker (dockerd, buildx, compose) | `featured-base` |
+| `featured-kathara` | featured | `featured-dind` + Kathara network emulation | `featured-dind` |
 | `featured-ros2` | featured | `featured-base` + ROS 2 Jazzy desktop-full + Gazebo + MoveIt | `featured-base` |
 | `coder-base` | coder | Coder IDE + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
 | `coder-lite` | coder | Coder IDE + SSH, minimal install (no Miniconda, no VGL) | `ubuntu:24.04` |
 | `jupyter-base` | jupyter | JupyterLab + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
 | `jupyter-speit-ai` | jupyter | `jupyter-base` + scientific stack + PyTorch conda environment | `jupyter-base` |
-| `agent-base` | agent | Standalone agent container: openclaw gateway + Claude Code + opencode + document toolchain (pandas/pdf/ocr/playwright/libreoffice). No desktop, no Coder, no Miniconda. Exposes `/agent` (openclaw), `/ssh` (websocat WS→SSH), and the landing page at `/`. | `ubuntu:24.04` |
+| `agent-base` | agent | Standalone agent container: openclaw gateway + Claude Code + opencode + document toolchain (pandas/pdf/ocr/playwright/libreoffice). No desktop, no Coder, no Miniconda. Exposes `/agent` (openclaw), `/terminal` (ttyd web terminal), `/ssh` (websocat WS→SSH), and the landing page at `/`. | `ubuntu:24.04` |
 
 ### Ascend Tags (base image: `ascendai/cann`)
 
@@ -185,22 +189,19 @@ QEMU-wrapped images are published as `davidliyutong/idekube-container-qemu:<tag>
 | `$SCHEME://INGRESS_HOST$/coder`                                                   | Coder service        |
 | `$SCHEME://INGRESS_HOST$/jupyter`                                                 | Jupyter service      |
 | `$SCHEME://INGRESS_HOST$/vnc`                                                     | noVNC service        |
+| `$SCHEME://INGRESS_HOST$/agent`                                                   | openclaw agent gateway |
+| `$SCHEME://INGRESS_HOST$/terminal`                                                | ttyd web terminal    |
 | `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$/ssh" idekube@idekube`  | Websocat-proxied SSH |
 
 ### Landing Page (`index.html`)
 
 The container ships a built-in Nginx landing page at `/` that auto-detects which services are available and only shows reachable entries.
 
-- It probes `/coder`, `/jupyter`, `/vnc`, and checks WebSocket availability on `/ssh`.
+- It probes `/coder`, `/jupyter`, `/vnc`, `/agent`, `/terminal`, and checks WebSocket availability on `/ssh`.
 - The SSH card copies a ready-to-use `ProxyCommand` snippet for `websocat`.
 - It supports Chinese/English switch and dark/light theme, both persisted in `localStorage`.
 
-Current landing-page files are:
-
-- `artifacts/docker/coder/rootfs/usr/share/nginx/html/index.html`
-- `artifacts/docker/jupyter/rootfs/usr/share/nginx/html/index.html`
-- `artifacts/docker/featured/rootfs/usr/share/nginx/html/index.html`
-- `artifacts/qemu/featured/rootfs/usr/share/nginx/html/index.html`
+The landing page is built from the `frontend/` directory (Vue.js) and bundled into each image at build time.
 
 If you deploy behind an ingress path prefix, make sure your ingress rewrites paths so the page can still reach `/coder`, `/jupyter`, `/vnc`, and `/ssh` correctly.
 
@@ -296,6 +297,11 @@ Here is a checklist for testing the container:
 - [x] Container runs without GPU
 - [x] Container runs in the non-root user mode
 - [x] IDEKUBE_INIT_HOME works
+- [x] Access token auth works (query param, cookie, X-header)
+- [x] Cookie is set automatically when token is passed via query param
+- [x] `/ssh` is excluded from access token auth
+- [x] Agent gateway (`/agent`) is working
+- [x] Web terminal (`/terminal`) is working
 
 ## Known Issues
 
@@ -314,7 +320,7 @@ These are features that do not work when the container is run in rootless mode:
 ## Roadmap
 
 - [ ] Test multus CNI for multiple network interfaces
-- [ ] Support for Authorization Header
+- [ ] Support for standard HTTP `Authorization: Bearer <token>` header
 
 ## Acknowledgement
 

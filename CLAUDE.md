@@ -8,7 +8,7 @@ IDEKube Container is a collection of Docker container images providing IDE envir
 
 ## Build System
 
-The project uses Make + shell scripts. Build arguments are read from `.dockerargs` (a symlink to `.dockerargs.base` or `.dockerargs.ascend`), and env vars from `.env` (symlink to `.env.base` or `.env.ascend`). All Dockerfiles require BuildKit (`# syntax=docker/dockerfile:1`) — install scripts are bind-mounted per-RUN via `--mount=type=bind` instead of bulk-copied, so each layer's cache only depends on the single script it executes.
+The project uses `build.py` (a stateless CLI that reads `images.json`) to resolve the dependency DAG and run Docker build/push commands. The legacy Make + shell scripts are still available. Build arguments are read from `.dockerargs.base` or `.dockerargs.ascend` (selected per lineup in `images.json`), and env vars from `.env` (symlink to `.env.base` or `.env.ascend`). All Dockerfiles require BuildKit (`# syntax=docker/dockerfile:1`) — install scripts are bind-mounted per-RUN via `--mount=type=bind` instead of bulk-copied, so each layer's cache only depends on the single script it executes.
 
 ### Key Build Commands
 
@@ -57,7 +57,7 @@ Images are tagged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$GIT_TAG-$ARCH`. The `BRAN
 
 ### Four Flavors
 
-- **`featured/`** — Full desktop with Coder + noVNC (TurboVNC + VirtualGL) + SSH. Variants: `base`, `speit`, `speit-ai`, `dind`, `ros2`
+- **`featured/`** — Full desktop with Coder + noVNC (TurboVNC + VirtualGL) + SSH. Variants: `base`, `speit`, `speit-ai`, `dind`, `kathara`, `ros2`
 - **`coder/`** — Coder IDE only + SSH. Variants: `base`, `lite`
 - **`jupyter/`** — Jupyter only + SSH. Variants: `base`, `speit-ai`, `speit-ascendai`
 - **`agent/`** — Standalone agent toolchain (openclaw + Claude Code + opencode + document processing) exposing `/agent`, `/terminal` (ttyd web terminal), and `/ssh`. Variants: `base`
@@ -85,8 +85,8 @@ Containers run `supervisord` (via `tini`) to manage services. The entrypoint (`s
 
 ### Build Branches Order
 
-Build order matters due to image dependencies. The `BRANCHES` variable in the Makefile defines this:
-`featured/base featured/speit featured/speit-ai featured/dind coder/base coder/lite jupyter/base jupyter/speit-ai agent/base`
+Build order matters due to image dependencies. The build order is defined in `images.json` and resolved by `build.py`:
+`featured/base featured/speit featured/speit-ai featured/dind featured/kathara featured/ros2 coder/base coder/lite jupyter/base jupyter/speit-ai agent/base`
 
 ### CI/CD
 
