@@ -1,4 +1,4 @@
-name: Publish Images (reusable)
+name: _Publish Lineup (reusable)
 
 on:
   workflow_call:

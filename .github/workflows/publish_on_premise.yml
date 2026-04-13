@@ -1,4 +1,4 @@
-name: Build and Publish (On-Premise)
+name: Publish Images (On-Premise)
 
 on:
   workflow_dispatch:

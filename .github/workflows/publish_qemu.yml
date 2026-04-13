@@ -1,4 +1,4 @@
-name: Build and Publish QEMU Images
+name: Publish QEMU Images
 
 on:
   workflow_dispatch:

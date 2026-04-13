@@ -1,4 +1,4 @@
-name: Docker Build and Publish
+name: Publish Images
 
 on:
   workflow_dispatch:
@@ -67,7 +67,7 @@ jobs:
   publish-base:
     needs: frontend
     if: ${{ inputs.branch == '' && (github.event_name == 'release' || inputs.lineup == 'base' || inputs.lineup == 'all') }}
-    uses: ./.github/workflows/publish_images.yml
+    uses: ./.github/workflows/_publish_lineup.yml
     with:
       lineup: base
     secrets: inherit
@@ -75,7 +75,7 @@ jobs:
   publish-ascend:
     needs: frontend
     if: ${{ inputs.branch == '' && (github.event_name == 'release' || inputs.lineup == 'ascend' || inputs.lineup == 'all') }}
-    uses: ./.github/workflows/publish_images.yml
+    uses: ./.github/workflows/_publish_lineup.yml
     with:
       lineup: ascend
     secrets: inherit
