@@ -307,6 +307,11 @@
         rsync -ar /tmp/rootfs/ /
       ignore_errors: yes
 
+    - name: Make vm-init.sh executable
+      file:
+        path: /etc/idekube/vm-init.sh
+        mode: '0755'
+
     - name: Populate HOME_DIR
       shell:
         rsync -ar /etc/skel/ /home/idekube/
@@ -448,3 +453,8 @@
         shell:
           rsync -a --delete /etc/skel/ /home/idekube/
         ignore_errors: yes
+
+    # Clean cloud-init state so it re-runs on first runtime boot
+    - name: Clean cloud-init state
+      shell: cloud-init clean --logs
+      ignore_errors: yes

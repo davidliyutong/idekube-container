@@ -127,3 +127,8 @@
         shell:
           rsync -a --delete /etc/skel/ /home/idekube/
         ignore_errors: yes
+
+    # Clean cloud-init state so it re-runs on first runtime boot
+    - name: Clean cloud-init state
+      shell: cloud-init clean --logs
+      ignore_errors: yes
