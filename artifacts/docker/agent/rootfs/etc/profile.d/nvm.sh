@@ -1,5 +1,5 @@
 # Make the nvm-installed Node.js (and globally-installed CLIs like
-# openclaw, claude, opencode) available to interactive login shells.
+# claude, opencode) available to interactive login shells.
 #
 # Dockerfile `ENV PATH=$NVM_DIR/current:$PATH` only affects processes
 # spawned by the image (e.g. supervisord), not interactive shells

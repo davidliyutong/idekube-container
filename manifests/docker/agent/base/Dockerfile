@@ -11,7 +11,6 @@ ARG TZ=Asia/Shanghai \
     TTYD_VERSION=1.7.7 \
     NODE_MAJOR=22 \
     OPENCODE_VERSION=latest \
-    OPENCLAW_VERSION=latest \
     CLAUDE_CODE_VERSION=latest
 
 # Avoid prompts for time zone
@@ -55,13 +54,11 @@ RUN --mount=type=bind,source=manifests/install-scripts/setup-nvm.sh,target=/tmp/
     export NODE_MAJOR=${NODE_MAJOR}; bash /tmp/setup-nvm.sh
 ENV PATH=$NVM_DIR/current:$PATH
 
-# Install agent CLIs (opencode + claude code + openclaw gateway)
+# Install agent CLIs (opencode + claude code)
 RUN --mount=type=bind,source=manifests/install-scripts/setup-opencode.sh,target=/tmp/setup-opencode.sh \
     export OPENCODE_VERSION=${OPENCODE_VERSION}; bash /tmp/setup-opencode.sh
 RUN --mount=type=bind,source=manifests/install-scripts/setup-claude-code.sh,target=/tmp/setup-claude-code.sh \
     export CLAUDE_CODE_VERSION=${CLAUDE_CODE_VERSION}; bash /tmp/setup-claude-code.sh
-RUN --mount=type=bind,source=manifests/install-scripts/setup-openclaw.sh,target=/tmp/setup-openclaw.sh \
-    export OPENCLAW_VERSION=${OPENCLAW_VERSION}; bash /tmp/setup-openclaw.sh
 
 # Build tools, document conversion stack, headless Java, trimmed TeX Live
 RUN --mount=type=bind,source=manifests/install-scripts/setup-agent-tools.sh,target=/tmp/setup-agent-tools.sh \
@@ -82,7 +79,7 @@ COPY artifacts/docker/agent/rootfs /
 COPY artifacts/docker/startup-scripts /
 COPY frontend/dist/ /usr/share/nginx/html/
 
-# Make the openclaw runtime bootstrap hook executable
+# Make runtime startup hooks executable (noop in base; hooks added by derived images)
 RUN chmod +x /etc/idekube/startup.bash/*.sh
 
 EXPOSE 80

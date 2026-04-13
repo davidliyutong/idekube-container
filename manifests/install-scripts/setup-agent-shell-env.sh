@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Make the agent toolchain (nvm, openclaw, claude, opencode, JAVA_HOME,
+# Make the agent toolchain (nvm, claude, opencode, JAVA_HOME,
 # PLAYWRIGHT_BROWSERS_PATH, ...) reachable from interactive login
 # shells started via `su -`, SSH, or `docker exec`. The Dockerfile's
 # ENV only affects the entrypoint process tree; interactive shells

@@ -60,7 +60,7 @@ Images are tagged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$GIT_TAG-$ARCH`. The `BRAN
 - **`featured/`** — Full desktop with Coder + noVNC (TurboVNC + VirtualGL) + SSH. Variants: `base`, `speit`, `speit-ai`, `dind`, `kathara`, `ros2`
 - **`coder/`** — Coder IDE only + SSH. Variants: `base`, `lite`
 - **`jupyter/`** — Jupyter only + SSH. Variants: `base`, `speit-ai`, `speit-ascendai`
-- **`agent/`** — Standalone agent toolchain (openclaw + Claude Code + opencode + document processing) exposing `/agent`, `/terminal` (ttyd web terminal), and `/ssh`. Variants: `base`
+- **`agent/`** — Standalone agent toolchain (Claude Code + opencode + document processing) exposing `/terminal` (ttyd web terminal) and `/ssh`. Variants: `base`, `openclaw` (adds openclaw gateway at `/agent`)
 
 ### Directory Layout
 
@@ -86,7 +86,7 @@ Containers run `supervisord` (via `tini`) to manage services. The entrypoint (`s
 ### Build Branches Order
 
 Build order matters due to image dependencies. The build order is defined in `images.json` and resolved by `build.py`:
-`featured/base featured/speit featured/speit-ai featured/dind featured/kathara featured/ros2 coder/base coder/lite jupyter/base jupyter/speit-ai agent/base`
+`featured/base featured/speit featured/speit-ai featured/dind featured/kathara featured/ros2 coder/base coder/lite jupyter/base jupyter/speit-ai agent/base agent/openclaw`
 
 ### CI/CD
 

@@ -20,7 +20,8 @@
         "coder/lite",
         "jupyter/base",
         "jupyter/speit-ai",
-        "agent/base"
+        "agent/base",
+        "agent/openclaw"
       ]
     },
     "ascend": {
@@ -46,7 +47,8 @@
     "jupyter/base":           { "depends_on": null },
     "jupyter/speit-ai":       { "depends_on": "jupyter/base" },
     "jupyter/speit-ascendai": { "depends_on": "jupyter/base" },
-    "agent/base":             { "depends_on": null }
+    "agent/base":             { "depends_on": null },
+    "agent/openclaw":         { "depends_on": "agent/base" }
   },
   "qemu": {
     "branches": ["featured/base", "featured/kathara"],

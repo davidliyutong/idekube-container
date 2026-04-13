@@ -111,7 +111,7 @@ You can monitor the CPU usage of the container with `htop`.
 
 ## Architecture Explained
 
-There are four flavors: `featured` with noVNC desktop support, `coder` with Coder IDE only, `jupyter` with JupyterLab only, and `agent` with openclaw agent gateway + ttyd web terminal.
+There are four flavors: `featured` with noVNC desktop support, `coder` with Coder IDE only, `jupyter` with JupyterLab only, and `agent` with AI agent toolchain + ttyd web terminal (optional openclaw gateway in the `openclaw` variant).
 
 The container runs a `supervisord` process that starts services. A nginx server is used to reverse proxy the services.
 
@@ -156,7 +156,8 @@ Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliy
 | `coder-lite` | coder | Coder IDE + SSH, minimal install (no Miniconda, no VGL) | `ubuntu:24.04` |
 | `jupyter-base` | jupyter | JupyterLab + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
 | `jupyter-speit-ai` | jupyter | `jupyter-base` + scientific stack + PyTorch conda environment | `jupyter-base` |
-| `agent-base` | agent | Standalone agent container: openclaw gateway + Claude Code + opencode + document toolchain (pandas/pdf/ocr/playwright/libreoffice). No desktop, no Coder, no Miniconda. Exposes `/agent` (openclaw), `/terminal` (ttyd web terminal), `/ssh` (websocat WS→SSH), and the landing page at `/`. | `ubuntu:24.04` |
+| `agent-base` | agent | Standalone agent container: Claude Code + opencode + document toolchain (pandas/pdf/ocr/playwright/libreoffice). No desktop, no Coder, no Miniconda. Exposes `/terminal` (ttyd web terminal), `/ssh` (websocat WS→SSH), and the landing page at `/`. | `ubuntu:24.04` |
+| `agent-openclaw` | agent | `agent-base` + openclaw gateway. Adds `/agent` (openclaw Control UI + WebSocket). | `agent-base` |
 
 ### Ascend Tags (base image: `ascendai/cann`)
 
@@ -189,7 +190,7 @@ QEMU-wrapped images are published as `davidliyutong/idekube-container-qemu:<tag>
 | `$SCHEME://INGRESS_HOST$/coder`                                                   | Coder service        |
 | `$SCHEME://INGRESS_HOST$/jupyter`                                                 | Jupyter service      |
 | `$SCHEME://INGRESS_HOST$/vnc`                                                     | noVNC service        |
-| `$SCHEME://INGRESS_HOST$/agent`                                                   | openclaw agent gateway |
+| `$SCHEME://INGRESS_HOST$/agent`                                                   | openclaw agent gateway (agent/openclaw only) |
 | `$SCHEME://INGRESS_HOST$/terminal`                                                | ttyd web terminal    |
 | `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$/ssh" idekube@idekube`  | Websocat-proxied SSH |
 
