@@ -1,6 +1,8 @@
 <template>
     <a
         :href="isCopyAction ? 'javascript:void(0)' : `/${service.path}/`"
+        :target="!isCopyAction && openInNewTab ? '_blank' : undefined"
+        :rel="!isCopyAction && openInNewTab ? 'noopener noreferrer' : undefined"
         class="service-card"
         :id="`service-${service.path}`"
         @click="handleClick"
@@ -23,12 +25,14 @@
 import { ref, computed } from 'vue'
 import type { DetectedService } from '../composables/useServiceDetection'
 import { useLanguage } from '../composables/useLanguage'
+import { useNewTab } from '../composables/useNewTab'
 
 const props = defineProps<{
     service: DetectedService
 }>()
 
 const { lang } = useLanguage()
+const { openInNewTab } = useNewTab()
 const copiedRecently = ref(false)
 const descriptionStyle = ref<Record<string, string>>({})
 

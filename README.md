@@ -43,7 +43,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: container-0
-          image: docker.io/davidliyutong/idekube-container:featured-base-v0.6.2
+          image: docker.io/davidliyutong/idekube-container:featured-base-v0.6.3
           env:
             - name: NVIDIA_DRIVER_CAPABILITIES # For Vulkan, OpenGL, NVEncode, etc, avoid manually mapping libs.
               value: all
@@ -79,7 +79,7 @@ However, it can also be used as a standalone container. The following is an exam
 ```yaml
 services:
   idekube_container:
-    image: davidliyutong/idekube-container:featured-base-v0.6.2
+    image: davidliyutong/idekube-container:featured-base-v0.6.3
     ports:
       - "3000:80"
     volumes:
@@ -137,7 +137,7 @@ If the directory `/rootfs` exists and is mounted from the host, the container wi
 
 ## Available Docker Image Tags
 
-Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliyutong/idekube-container). Images are tagged as `davidliyutong/idekube-container:<tag>-<version>`, where `<version>` is the git tag (e.g. `v0.6.2`). Multi-arch manifests (`amd64` and `arm64`) are available for each tag.
+Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliyutong/idekube-container). Images are tagged as `davidliyutong/idekube-container:<tag>-<version>`, where `<version>` is the git tag (e.g. `v0.6.3`). Multi-arch manifests (`amd64` and `arm64`) are available for each tag.
 
 ### Standard Tags (base image: `ubuntu:24.04`)
 
