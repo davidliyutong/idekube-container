@@ -3,6 +3,7 @@
 <div style="text-align: center;">
     <img src="assets/screenshot-0.jpg" alt="Screenshot" style="width: 100%; max-width: 100%; height: auto;">
 </div>
+
 The IDEKUBE project was initiated to provide an IDE container, facilitating development work within Kubernetes clusters. This is a continuously updated collection of containers, primarily used in scenarios such as robotics, simulations, machine learning, and education. The project has been utilized in courses at the Shanghai Jiao Tong University Paris Elite Institute of Technology (SPEIT).
 
 The project is divided into four flavors: `featured`, `coder`, `jupyter`, and `agent`. The `featured` flavor provides a full desktop environment (XFCE via noVNC) with Coder IDE. The `coder` flavor provides Coder IDE only. The `jupyter` flavor provides JupyterLab only. The `agent` flavor provides an AI agent toolchain with openclaw gateway, ttyd web terminal, and SSH. All flavors offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
@@ -23,6 +24,18 @@ The desktop environment supports hardware acceleration based on EGL (using Virtu
 The container supports architectures including `amd64` and `arm64`.
 
 > Due to a lack of hardware, GPU hardware acceleration on the `arm64` architecture has not been tested.
+
+## Screenshots
+
+The following screenshots highlight two key entry points of the IDEKUBE container: the landing page that auto-detects available services, and the `agent` flavor featuring the openclaw agent gateway alongside the ttyd web terminal.
+
+<div style="text-align: center;">
+    <img src="assets/screenshot-1.jpg" alt="Landing page served at / — auto-detects available services (Coder, Jupyter, noVNC, agent, terminal, SSH)" style="width: 100%; max-width: 100%; height: auto;">
+</div>
+
+<div style="text-align: center;">
+    <img src="assets/screenshot-2.jpg" alt="openclaw agent gateway at /agent paired with the ttyd web terminal at /terminal" style="width: 100%; max-width: 100%; height: auto;">
+</div>
 
 ## Get Started
 
