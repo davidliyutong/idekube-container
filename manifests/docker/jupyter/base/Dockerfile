@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=ubuntu:24.04
 
-FROM golang:1.24-alpine AS healthcheck-builder
+FROM golang:1.25-alpine AS healthcheck-builder
 WORKDIR /build
 COPY tools/idekube-healthcheck/ .
 RUN go mod download && go build -o /idekube-healthcheck .
