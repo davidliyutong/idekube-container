@@ -79,8 +79,5 @@ COPY artifacts/docker/agent/rootfs /
 COPY artifacts/docker/startup-scripts /
 COPY frontend/dist/ /usr/share/nginx/html/
 
-# Make runtime startup hooks executable (noop in base; hooks added by derived images)
-RUN chmod +x /etc/idekube/startup.bash/*.sh
-
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

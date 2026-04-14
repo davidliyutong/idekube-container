@@ -111,7 +111,7 @@ You can monitor the CPU usage of the container with `htop`.
 
 ## Architecture Explained
 
-There are four flavors: `featured` with noVNC desktop support, `coder` with Coder IDE only, `jupyter` with JupyterLab only, and `agent` with AI agent toolchain + ttyd web terminal (optional openclaw gateway in the `openclaw` variant).
+There are four flavors: `featured` with noVNC desktop support, `coder` with Coder IDE only, `jupyter` with JupyterLab only, and `agent` with AI agent toolchain + ttyd web terminal (optional openclaw gateway in the `openclaw` variant, or Hermes Agent in the `hermes` variant).
 
 The container runs a `supervisord` process that starts services. A nginx server is used to reverse proxy the services.
 
@@ -158,6 +158,7 @@ Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliy
 | `jupyter-speit-ai` | jupyter | `jupyter-base` + scientific stack + PyTorch conda environment | `jupyter-base` |
 | `agent-base` | agent | Standalone agent container: Claude Code + opencode + document toolchain (pandas/pdf/ocr/playwright/libreoffice). No desktop, no Coder, no Miniconda. Exposes `/terminal` (ttyd web terminal), `/ssh` (websocat WS→SSH), and the landing page at `/`. | `ubuntu:24.04` |
 | `agent-openclaw` | agent | `agent-base` + openclaw gateway. Adds `/agent` (openclaw Control UI + WebSocket). | `agent-base` |
+| `agent-hermes` | agent | `agent-base` + Hermes Agent (Nous Research). Adds `hermes` CLI + gateway API server (port 8642). Exposes `/terminal` (ttyd), `/ssh` (websocat). | `agent-base` |
 
 ### Ascend Tags (base image: `ascendai/cann`)
 
