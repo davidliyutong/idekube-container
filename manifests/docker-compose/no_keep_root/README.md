@@ -39,7 +39,7 @@ services:
 The container reads `IDEKUBE_AUTHORIZED_KEYS` on startup, base64-decodes it,
 and writes the result to `/home/idekube/.ssh/authorized_keys` with mode
 `600`. See the handler in
-[startup.sh:191-203](../../../artifacts/docker/startup-scripts/startup.sh#L191-L203).
+[startup.sh:191-203](../../../artifacts/docker/rootfs/startup.sh#L191-L203).
 
 Encode your public key(s) on the host:
 
@@ -79,7 +79,7 @@ host, and existing host files may be unreadable inside the container.
 
 Set `IDEKUBE_USER_UID` to your host UID. The startup script calls
 `usermod -u` and re-chowns the home directory to the new UID. See
-[startup.sh:104-120](../../../artifacts/docker/startup-scripts/startup.sh#L104-L120).
+[startup.sh:104-120](../../../artifacts/docker/rootfs/startup.sh#L104-L120).
 
 ```bash
 id -u    # e.g. 1000

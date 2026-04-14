@@ -22,3 +22,6 @@ RUN chmod +x /etc/idekube/startup.bash/00-openclaw-bootstrap.sh
 
 # Override nginx config to add /agent location block
 COPY manifests/docker/agent/openclaw/default /etc/nginx/sites-enabled/default
+
+# Override health config for openclaw variant
+COPY manifests/docker/agent/openclaw/health.json /etc/idekube/health.json

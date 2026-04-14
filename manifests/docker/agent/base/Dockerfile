@@ -1,5 +1,11 @@
 # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=ubuntu:24.04
+
+FROM golang:1.24-alpine AS healthcheck-builder
+WORKDIR /build
+COPY tools/idekube-healthcheck/ .
+RUN go mod download && go build -o /idekube-healthcheck .
+
 FROM ${BASE_IMAGE} AS system
 
 # These arguments are passed in via the docker build command
@@ -74,10 +80,13 @@ RUN --mount=type=bind,source=manifests/install-scripts/setup-docproc.sh,target=/
 RUN --mount=type=bind,source=manifests/install-scripts/setup-agent-shell-env.sh,target=/tmp/setup-agent-shell-env.sh \
     bash /tmp/setup-agent-shell-env.sh
 
-# Setup the root filesystem (agent rootfs + shared startup scripts)
+# Setup the root filesystem (common rootfs + agent overrides)
+COPY artifacts/docker/rootfs /
 COPY artifacts/docker/agent/rootfs /
-COPY artifacts/docker/startup-scripts /
 COPY frontend/dist/ /usr/share/nginx/html/
+
+# Health check server
+COPY --from=healthcheck-builder /idekube-healthcheck /usr/local/bin/idekube-healthcheck
 
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

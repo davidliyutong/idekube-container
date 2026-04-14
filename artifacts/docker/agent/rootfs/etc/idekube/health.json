@@ -1,0 +1,9 @@
+{
+  "branch": "agent/base",
+  "entry": "/terminal",
+  "main": "terminal",
+  "services": {
+    "terminal": { "port": 7681, "path": "/terminal" },
+    "ssh":      { "port": 2222, "path": "/ssh" }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "branch": "jupyter/base",
+  "entry": "/jupyter/",
+  "main": "jupyter",
+  "services": {
+    "jupyter": { "port": 8888, "path": "/jupyter/" },
+    "ssh":     { "port": 2222, "path": "/ssh" }
+  }
+}

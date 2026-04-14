@@ -1,5 +1,11 @@
 # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=ubuntu:24.04
+
+FROM golang:1.24-alpine AS healthcheck-builder
+WORKDIR /build
+COPY tools/idekube-healthcheck/ .
+RUN go mod download && go build -o /idekube-healthcheck .
+
 FROM ${BASE_IMAGE} AS system
 
 # These arguments are passed in via the docker build command
@@ -79,9 +85,12 @@ ENV SHELL=/bin/bash \
     USERID=1000
 
 # Setup the root filesystem
+COPY artifacts/docker/rootfs /
 COPY artifacts/docker/featured/rootfs /
-COPY artifacts/docker/startup-scripts /
 COPY frontend/dist/ /usr/share/nginx/html/
+
+# Health check server
+COPY --from=healthcheck-builder /idekube-healthcheck /usr/local/bin/idekube-healthcheck
 
 EXPOSE 80
 ENTRYPOINT ["/startup.sh"]

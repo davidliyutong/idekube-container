@@ -1,4 +1,0 @@
-envs_dirs:
-  - /home/idekube/.conda/envs
-pkgs_dirs:
-  - /home/idekube/.conda/pkgs

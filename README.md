@@ -7,15 +7,16 @@ The IDEKUBE project was initiated to provide an IDE container, facilitating deve
 
 The project is divided into four flavors: `featured`, `coder`, `jupyter`, and `agent`. The `featured` flavor provides a full desktop environment (XFCE via noVNC) with Coder IDE. The `coder` flavor provides Coder IDE only. The `jupyter` flavor provides JupyterLab only. The `agent` flavor provides an AI agent toolchain with openclaw gateway, ttyd web terminal, and SSH. All flavors offer SSH support based on Websocat tunnels. All exposed services are reverse-proxied by the built-in Nginx on port 80 of the container, with the following endpoints:
 
-| Endpoint         | Service                  |
-| ---------------- | ------------------------ |
-| `/`              | Landing page (auto-detects available services) |
-| `/coder`         | Coder service            |
-| `/jupyter`       | Jupyter service          |
-| `/vnc`           | noVNC service            |
-| `/agent`         | openclaw agent gateway   |
-| `/terminal`      | ttyd web terminal        |
-| `/ssh`           | Websocat-proxied SSH     |
+| Endpoint         | Service                                                |
+| ---------------- | ------------------------------------------------------ |
+| `/`              | Landing page (auto-detects available services)         |
+| `/coder`         | Coder service                                          |
+| `/jupyter`       | Jupyter service                                        |
+| `/vnc`           | noVNC service                                          |
+| `/agent`         | openclaw agent gateway                                 |
+| `/terminal`      | ttyd web terminal                                      |
+| `/ssh`           | Websocat-proxied SSH                                   |
+| `/health`        | Health check endpoint (no auth, JSON, for k8s probes)  |
 
 The desktop environment supports hardware acceleration based on EGL (using VirtualGL), thus eliminating the need for /tmp/.X11-unix mapping. When the container runs on an NVIDIA runtime, it should load NVIDIA's OpenGL libraries and enable hardware acceleration. If the container is not configured with a GPU, it will switch to software rendering mode. The container has been tested in Kubernetes clusters with `nvidia-device-plugin`, WSL, and `nvidia-container-toolkit`, an external display is not required.
 
@@ -115,7 +116,7 @@ There are four flavors: `featured` with noVNC desktop support, `coder` with Code
 
 The container runs a `supervisord` process that starts services. A nginx server is used to reverse proxy the services.
 
-The `artifacts/docker/startup-scripts/startup.sh` script is the shared entrypoint. It configures the container according to environment variables and starts the `supervisord` process.
+The `artifacts/docker/rootfs/startup.sh` script is the shared entrypoint. It configures the container according to environment variables and starts the `supervisord` process.
 
 | Name                      | Description                                     | Default     |
 | ------------------------- | ----------------------------------------------- | ----------- |
@@ -152,8 +153,8 @@ Pre-built images are published on [Docker Hub](https://hub.docker.com/r/davidliy
 | `featured-dind` | featured | `featured-base` + Docker-in-Docker (dockerd, buildx, compose) | `featured-base` |
 | `featured-kathara` | featured | `featured-dind` + Kathara network emulation | `featured-dind` |
 | `featured-ros2` | featured | `featured-base` + ROS 2 Jazzy desktop-full + Gazebo + MoveIt | `featured-base` |
-| `coder-base` | coder | Coder IDE + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
-| `coder-lite` | coder | Coder IDE + SSH, minimal install (no Miniconda, no VGL) | `ubuntu:24.04` |
+| `coder-base` | coder | Coder IDE + SSH, minimal install (no desktop, no Miniconda) | `ubuntu:24.04` |
+| `coder-conda` | coder | `coder-base` + Miniconda | `coder-base` |
 | `jupyter-base` | jupyter | JupyterLab + SSH + Miniconda (no desktop) | `ubuntu:24.04` |
 | `jupyter-speit-ai` | jupyter | `jupyter-base` + scientific stack + PyTorch conda environment | `jupyter-base` |
 | `agent-base` | agent | Standalone agent container: Claude Code + opencode + document toolchain (pandas/pdf/ocr/playwright/libreoffice). No desktop, no Coder, no Miniconda. Exposes `/terminal` (ttyd web terminal), `/ssh` (websocat WS→SSH), and the landing page at `/`. | `ubuntu:24.04` |
@@ -185,27 +186,54 @@ QEMU-wrapped images are published as `davidliyutong/idekube-container-qemu:<tag>
 
 ## Usage
 
-| URL/CMD                                                                           | Service              |
-| --------------------------------------------------------------------------------- | -------------------- |
-| `$SCHEME://INGRESS_HOST$`                                                         | Landing page         |
-| `$SCHEME://INGRESS_HOST$/coder`                                                   | Coder service        |
-| `$SCHEME://INGRESS_HOST$/jupyter`                                                 | Jupyter service      |
-| `$SCHEME://INGRESS_HOST$/vnc`                                                     | noVNC service        |
+| URL/CMD                                                                           | Service                                      |
+| --------------------------------------------------------------------------------- | -------------------------------------------- |
+| `$SCHEME://INGRESS_HOST$`                                                         | Landing page                                 |
+| `$SCHEME://INGRESS_HOST$/coder`                                                   | Coder service                                |
+| `$SCHEME://INGRESS_HOST$/jupyter`                                                 | Jupyter service                              |
+| `$SCHEME://INGRESS_HOST$/vnc`                                                     | noVNC service                                |
 | `$SCHEME://INGRESS_HOST$/agent`                                                   | openclaw agent gateway (agent/openclaw only) |
-| `$SCHEME://INGRESS_HOST$/terminal`                                                | ttyd web terminal    |
-| `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$/ssh" idekube@idekube`  | Websocat-proxied SSH |
+| `$SCHEME://INGRESS_HOST$/terminal`                                                | ttyd web terminal                            |
+| `$SCHEME://INGRESS_HOST$/health`                                                  | Health check (JSON, no auth)                 |
+| `ssh -o ProxyCommand="websocat --binary ws://INGRESS_HOST$/ssh" idekube@idekube`  | Websocat-proxied SSH                         |
 
 ### Landing Page (`index.html`)
 
 The container ships a built-in Nginx landing page at `/` that auto-detects which services are available and only shows reachable entries.
 
-- It probes `/coder`, `/jupyter`, `/vnc`, `/agent`, `/terminal`, and checks WebSocket availability on `/ssh`.
+- It fetches the `/health` endpoint to discover available services and their health, with a fallback to individual probes for older images.
 - The SSH card copies a ready-to-use `ProxyCommand` snippet for `websocat`.
 - It supports Chinese/English switch and dark/light theme, both persisted in `localStorage`.
 
-The landing page is built from the `frontend/` directory (Vue.js) and bundled into each image at build time.
+The landing page is built from the `frontend/` directory (Vue.js) and bundled into each image at build time. It fetches the `/health` endpoint to discover available services instead of probing each one individually.
 
 If you deploy behind an ingress path prefix, make sure your ingress rewrites paths so the page can still reach `/coder`, `/jupyter`, `/vnc`, and `/ssh` correctly.
+
+### Health Check Endpoint (`/health`)
+
+Every container exposes a `/health` endpoint (no authentication required) that returns JSON describing the container's services and their health status. This is suitable for Kubernetes liveness/readiness probes.
+
+The response includes the image branch name, the main entry URL, and per-service health status:
+
+```json
+{
+  "status": "healthy",
+  "branch": "featured/base",
+  "entry": "/vnc/",
+  "services": {
+    "vnc":   { "port": 6081, "path": "/vnc/",   "healthy": true },
+    "coder": { "port": 3000, "path": "/coder/",  "healthy": true },
+    "ssh":   { "port": 2222, "path": "/ssh",      "healthy": true }
+  }
+}
+```
+
+HTTP status codes:
+
+- **200** — main service is healthy (`status` is `"healthy"` or `"degraded"` if secondary services are down)
+- **502** — main service is unhealthy
+
+The health check is powered by a Go binary (`tools/idekube-healthcheck/`) built via multi-stage Docker build and managed by supervisord. Each flavor has its own config at `/etc/idekube/health.json` defining the available services and ports.
 
 ### SSH Proxy
 
@@ -304,6 +332,7 @@ Here is a checklist for testing the container:
 - [x] `/ssh` is excluded from access token auth
 - [x] Agent gateway (`/agent`) is working
 - [x] Web terminal (`/terminal`) is working
+- [ ] Health check endpoint (`/health`) returns correct JSON and status codes
 
 ## Known Issues
 

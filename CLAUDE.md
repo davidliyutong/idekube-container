@@ -58,18 +58,20 @@ Images are tagged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$GIT_TAG-$ARCH`. The `BRAN
 ### Four Flavors
 
 - **`featured/`** — Full desktop with Coder + noVNC (TurboVNC + VirtualGL) + SSH. Variants: `base`, `speit`, `speit-ai`, `dind`, `kathara`, `ros2`
-- **`coder/`** — Coder IDE only + SSH. Variants: `base`, `lite`
+- **`coder/`** — Coder IDE only + SSH. Variants: `base`, `conda` (adds Miniconda)
 - **`jupyter/`** — Jupyter only + SSH. Variants: `base`, `speit-ai`, `speit-ascendai`
-- **`agent/`** — Standalone agent toolchain (Claude Code + opencode + document processing) exposing `/terminal` (ttyd web terminal) and `/ssh`. Variants: `base`, `openclaw` (adds openclaw gateway at `/agent`), `hermes` (adds Hermes Agent CLI + gateway API server)
+- **`agent/`** — Standalone agent toolchain (Claude Code + opencode + document processing) exposing `/terminal` (ttyd web terminal) and `/ssh`. Variants: `base`, `openclaw` (adds openclaw gateway at `/agent`), `hermes` (adds Hermes Agent CLI + gateway API server + web dashboard at `/agent`)
 
 ### Directory Layout
 
 - `manifests/docker/<flavor>/<variant>/Dockerfile` — Dockerfiles for each image variant
 - `manifests/install-scripts/` — Modular shell scripts bind-mounted into Dockerfiles via `RUN --mount=type=bind` (e.g., `setup-packages.sh`, `setup-code-server.sh`, `setup-vnc.sh`)
 - `artifacts/docker/<flavor>/rootfs/` — Root filesystem overlay copied into images (nginx configs, supervisord configs, skel files, landing pages)
-- `artifacts/docker/<flavor>/rootfs/etc/nginx/conf.d/access_token.conf` — Nginx map template for access-token auth (placeholder replaced at runtime by `authn.sh`)
-- `artifacts/docker/startup-scripts/startup.sh` — Main container entrypoint shared across flavors
-- `artifacts/docker/startup-scripts/authn.sh` — Access-token authentication setup script called by `startup.sh`
+- `artifacts/docker/<flavor>/rootfs/etc/idekube/health.json` — Per-flavor health check config (defines branch, entry URL, main service, and service ports)
+- `artifacts/docker/rootfs/` — Common root filesystem overlay shared across all flavors (startup scripts, skel files, access-token nginx config, healthcheck supervisor config)
+- `artifacts/docker/rootfs/startup.sh` — Main container entrypoint shared across flavors
+- `artifacts/docker/rootfs/authn.sh` — Access-token authentication setup script called by `startup.sh`
+- `tools/idekube-healthcheck/` — Go-based health check server (built via multi-stage Docker build, serves `/health` endpoint on port 9999)
 - `scripts/shell/` — Build helper scripts (`build_image.sh`, `buildx_image.sh`, `docker_common.sh`, etc.)
 - `scripts/make/` — Makefile includes (`docker.mk`, `qemu.mk`)
 - `manifests/qemu/` — Dockerfiles for QEMU-based nested VM containers
@@ -81,12 +83,12 @@ Images are tagged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$GIT_TAG-$ARCH`. The `BRAN
 Containers run `supervisord` (via `tini`) to manage services. The entrypoint (`startup.sh`) handles:
 1. Init container mode (`I_AM_INIT_CONTAINER`) — copies rootfs to external mount
 2. Rootfs chroot mode (`/rootfs` mount) — binds host dirs and chroots
-3. Normal mode — configures shell, home directory, SSH keys, configures nginx access-token auth (`authn.sh`), runs startup hooks from `/etc/idekube/startup.bash/*.sh`, then starts supervisord
+3. Normal mode — configures shell, home directory, SSH keys, configures nginx access-token auth (`authn.sh`), runs startup hooks from `/etc/idekube/startup.bash/*.sh`, then starts supervisord (which also launches the health check server on port 9999)
 
 ### Build Branches Order
 
 Build order matters due to image dependencies. The build order is defined in `images.json` and resolved by `build.py`:
-`featured/base featured/speit featured/speit-ai featured/dind featured/kathara featured/ros2 coder/base coder/lite jupyter/base jupyter/speit-ai agent/base agent/openclaw agent/hermes`
+`featured/base featured/speit featured/speit-ai featured/dind featured/kathara featured/ros2 coder/base coder/conda jupyter/base jupyter/speit-ai agent/base agent/openclaw agent/hermes`
 
 ### CI/CD
 
