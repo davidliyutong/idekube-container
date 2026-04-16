@@ -4,7 +4,10 @@ ARCHS=("arm64" "amd64")
 DISTRO="noble"
 IMAGE_ENDPOINT="cloud-images.ubuntu.com"
 FILES_DIR=".cache/qemu_images"
-TAG="20260108"
+# Use "current" — the stable pointer to the latest daily build.
+# Dated snapshots (e.g. 20260108) are periodically pruned from the mirror,
+# which would cause CI 404s on fresh runs without a warm cache.
+TAG="current"
 
 echo "Creating directories..."
 mkdir -p "${FILES_DIR}"

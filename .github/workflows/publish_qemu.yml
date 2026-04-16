@@ -8,6 +8,10 @@ on:
 jobs:
   publish-qemu:
     runs-on: ubuntu-latest
+    env:
+      # Opt into Node.js 24 for JavaScript actions (e.g. actions/upload-artifact@v5),
+      # which silences the Node 20 deprecation warning ahead of the 2026-06-02 forced switch.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5

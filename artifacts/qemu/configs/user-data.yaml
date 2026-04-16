@@ -1,14 +1,20 @@
+#cloud-config
 # BUILD-TIME cloud-init config.
-# Used only during Ansible provisioning (build_qemu_root.sh).
-# At runtime the QEMU container's startup.sh generates a dynamic
+# NOTE: the "#cloud-config" line MUST be the first line — cloud-init
+# only recognizes user-data as cloud-config when that magic header is
+# at offset 0.  Earlier revisions had a preamble of comments above it,
+# which caused cloud-init to silently skip this file and boot with the
+# default "ubuntu" user (no password), making the Ansible SSH step
+# hang forever.
+#
+# Used only during Ansible provisioning (build_qemu_root.sh).  At
+# runtime the QEMU container's startup.sh generates a dynamic
 # user-data.yaml that injects access-token auth, SSH keys, UID
 # remapping, and other IDEKUBE_* settings via write_files / runcmd.
 #
-# ssh_pwauth is true here because Ansible connects via sshpass
-# during build.  The runtime config sets ssh_pwauth: false and
-# vm-init.sh enforces PasswordAuthentication no in sshd_config.
-
-#cloud-config
+# ssh_pwauth is true here because Ansible connects via sshpass during
+# build.  The runtime config sets ssh_pwauth: false and vm-init.sh
+# enforces PasswordAuthentication no in sshd_config.
 users:
   - name: idekube
     shell: /bin/bash
