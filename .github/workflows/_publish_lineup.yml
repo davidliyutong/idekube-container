@@ -7,6 +7,11 @@ on:
         required: true
         type: string
         description: "Lineup to build (base, ascend)"
+      release:
+        required: false
+        type: boolean
+        default: false
+        description: "Also push as <branch>-latest alongside the versioned tag"
 
 jobs:
   matrix:
@@ -30,7 +35,7 @@ jobs:
   publish-tier0:
     runs-on: ubuntu-latest
     needs: matrix
-    if: needs.matrix.outputs.tier0 != '[]'
+    if: ${{ needs.matrix.outputs.tier0 != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -52,13 +57,17 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish ${{ matrix.branch }}
-        run: python3 build.py publishx ${{ matrix.branch }} --lineup=${{ inputs.lineup }}
-        continue-on-error: true
+        run: |
+          python3 build.py publishx ${{ matrix.branch }} --lineup=${{ inputs.lineup }} \
+            ${{ inputs.release && '--release' || '' }}
 
   publish-tier1:
     runs-on: ubuntu-latest
     needs: [matrix, publish-tier0]
-    if: needs.matrix.outputs.tier1 != '[]'
+    # Run even if a sibling in tier0 failed — fail-fast is off within a tier
+    # and a missing base image will fail tier1 naturally, surfacing the real
+    # error instead of the whole workflow passing green.
+    if: ${{ always() && needs.matrix.outputs.tier1 != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -80,13 +89,14 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish ${{ matrix.branch }}
-        run: python3 build.py publishx ${{ matrix.branch }} --lineup=${{ inputs.lineup }}
-        continue-on-error: true
+        run: |
+          python3 build.py publishx ${{ matrix.branch }} --lineup=${{ inputs.lineup }} \
+            ${{ inputs.release && '--release' || '' }}
 
   publish-tier2:
     runs-on: ubuntu-latest
     needs: [matrix, publish-tier1]
-    if: needs.matrix.outputs.tier2 != '[]'
+    if: ${{ always() && needs.matrix.outputs.tier2 != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -108,5 +118,6 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish ${{ matrix.branch }}
-        run: python3 build.py publishx ${{ matrix.branch }} --lineup=${{ inputs.lineup }}
-        continue-on-error: true
+        run: |
+          python3 build.py publishx ${{ matrix.branch }} --lineup=${{ inputs.lineup }} \
+            ${{ inputs.release && '--release' || '' }}

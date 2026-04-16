@@ -86,6 +86,17 @@ def get_lineup_images(config, lineup_name):
     return get_lineup(config, lineup_name)["images"]
 
 
+def get_lineup_archs(config, lineup_name):
+    """Return the arch list for a lineup, falling back to defaults.archs.
+
+    A lineup may override `archs` when its base image is only valid on a subset
+    of architectures (e.g. the Ascend CANN image is arm64-only). When a single
+    arch is listed, buildx pushes under the plain tag with no `-<arch>` suffix.
+    """
+    lineup = get_lineup(config, lineup_name)
+    return lineup.get("archs") or config["defaults"]["archs"]
+
+
 def validate_lineup(config, lineup_name):
     """Validate that all images and their transitive deps are in the lineup."""
     lineup_images = set(get_lineup_images(config, lineup_name))
@@ -193,7 +204,9 @@ def compute_refs(config, branch, lineup_name):
 
     slug = branch_to_slug(branch)
     tag = f"{slug}-{git_tag}{tag_postfix}"
+    latest_tag = f"{slug}-latest{tag_postfix}"
     image_ref = f"{registry}/{author}/{name}:{tag}"
+    latest_ref = f"{registry}/{author}/{name}:{latest_tag}"
 
     return {
         "registry": registry,
@@ -203,7 +216,9 @@ def compute_refs(config, branch, lineup_name):
         "tag_postfix": tag_postfix,
         "slug": slug,
         "tag": tag,
+        "latest_tag": latest_tag,
         "image_ref": image_ref,
+        "latest_ref": latest_ref,
         "docker_args": docker_args,
     }
 
@@ -373,11 +388,19 @@ def run_build(config, branch, lineup_name, dry_run=False, arch=None):
         pass
 
 
-def run_buildx(config, branch, lineup_name, push=False, dry_run=False):
-    """Multi-arch build (and optionally push) via buildx."""
+def run_buildx(config, branch, lineup_name, push=False, release=False, dry_run=False):
+    """Multi-arch build (and optionally push) via buildx.
+
+    Lineups can pin a subset of archs (e.g. ascend -> arm64-only). When a
+    single arch is listed, --push writes a single-platform manifest under the
+    plain tag, so no `-<arch>` suffix ever appears in the published tag.
+
+    When release=True, the manifest is also pushed under `<slug>-latest<postfix>`
+    so a floating "latest" alias tracks the most recent release.
+    """
     refs = compute_refs(config, branch, lineup_name)
     build_args = get_full_build_args(refs)
-    archs = config["defaults"]["archs"]
+    archs = get_lineup_archs(config, lineup_name)
     platforms = ",".join(f"linux/{a}" for a in archs)
     dockerfile = f"{config['defaults']['dockerfile_base']}/{branch}/Dockerfile"
 
@@ -392,6 +415,8 @@ def run_buildx(config, branch, lineup_name, push=False, dry_run=False):
     if push:
         cmd.append("--push")
     cmd.extend([".", "-t", refs["image_ref"], "-f", dockerfile])
+    if release and push:
+        cmd.extend(["-t", refs["latest_ref"]])
 
     if dry_run:
         action = "publishx" if push else "buildx"
@@ -399,7 +424,8 @@ def run_buildx(config, branch, lineup_name, push=False, dry_run=False):
         return
 
     action = "Publishing" if push else "Building (multi-arch)"
-    print(f"{action} {refs['image_ref']}")
+    extra = f" (+ {refs['latest_ref']})" if release and push else ""
+    print(f"{action} {refs['image_ref']}{extra}")
     subprocess.run(cmd, check=True)
 
     # For non-push buildx, also load per-arch images locally
@@ -444,7 +470,7 @@ def run_publish(config, branch, lineup_name, dry_run=False, arch=None):
 def run_manifest(config, branch, lineup_name, dry_run=False):
     """Create a multi-arch manifest for one image."""
     refs = compute_refs(config, branch, lineup_name)
-    archs = config["defaults"]["archs"]
+    archs = get_lineup_archs(config, lineup_name)
     ref = refs["image_ref"]
     arch_refs = [f"{ref}-{a}" for a in archs]
 
@@ -471,7 +497,7 @@ def run_manifest(config, branch, lineup_name, dry_run=False):
 def run_rmmanifest(config, branch, lineup_name, dry_run=False):
     """Remove per-arch tags for one image from the registry."""
     refs = compute_refs(config, branch, lineup_name)
-    archs = config["defaults"]["archs"]
+    archs = get_lineup_archs(config, lineup_name)
 
     for a in archs:
         tag = f"{refs['image_ref']}-{a}"
@@ -713,7 +739,7 @@ def ci_matrix_native(config, lineup_name):
 
     result = {
         "lineup": lineup_name,
-        "archs": config["defaults"]["archs"],
+        "archs": get_lineup_archs(config, lineup_name),
     }
     for i, tier in enumerate(tiers):
         result[f"tier{i}"] = tier
@@ -758,6 +784,9 @@ def main():
         p = sub.add_parser(cmd_name, parents=[common], help=f"{cmd_name} a single image")
         p.add_argument("image", help="Image name (e.g., featured/base)")
         p.add_argument("--dry-run", action="store_true", help="Print commands without executing")
+        if cmd_name == "publishx":
+            p.add_argument("--release", action="store_true",
+                           help="Also push as <branch>-latest[-postfix] alongside the versioned tag")
 
     # --- Docker batch commands ---
     for cmd_name in ("build-all", "buildx-all", "publishx-all", "publish-all"):
@@ -767,6 +796,9 @@ def main():
         p.add_argument("--dry-run", action="store_true", help="Print commands without executing")
         if cmd_name in ("build-all", "publish-all"):
             p.add_argument("--arch", help="Override architecture (amd64, arm64)")
+        if cmd_name == "publishx-all":
+            p.add_argument("--release", action="store_true",
+                           help="Also push as <branch>-latest[-postfix] alongside the versioned tag")
 
     # --- Manifest commands ---
     for cmd_name in ("manifest", "rmmanifest"):
@@ -825,7 +857,8 @@ def main():
 
     elif args.command == "publishx":
         _validate_image_in_lineup(config, args.image, args.lineup)
-        run_buildx(config, args.image, args.lineup, push=True, dry_run=args.dry_run)
+        run_buildx(config, args.image, args.lineup, push=True,
+                   release=args.release, dry_run=args.dry_run)
 
     elif args.command == "publish":
         _validate_image_in_lineup(config, args.image, args.lineup)
@@ -846,8 +879,10 @@ def main():
                   dry_run=args.dry_run)
 
     elif args.command == "publishx-all":
+        release = args.release
         run_batch(config, args.lineup,
-                  lambda c, i, l, dry_run=False: run_buildx(c, i, l, push=True, dry_run=dry_run),
+                  lambda c, i, l, dry_run=False: run_buildx(c, i, l, push=True,
+                                                             release=release, dry_run=dry_run),
                   parallel=args.parallel, continue_on_error=args.continue_on_error,
                   dry_run=args.dry_run)
 

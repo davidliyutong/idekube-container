@@ -35,6 +35,7 @@ jobs:
   matrix:
     runs-on: ubuntu-latest
     outputs:
+      archs: ${{ steps.gen.outputs.archs }}
       tier0: ${{ steps.gen.outputs.tier0 }}
       tier1: ${{ steps.gen.outputs.tier1 }}
       tier2: ${{ steps.gen.outputs.tier2 }}
@@ -46,6 +47,7 @@ jobs:
         id: gen
         run: |
           MATRIX=$(python3 build.py ci-matrix-native --lineup=${{ inputs.lineup }})
+          echo "archs=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("archs",[])))')" >> "$GITHUB_OUTPUT"
           echo "tier0=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier0",[])))')" >> "$GITHUB_OUTPUT"
           echo "tier1=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier1",[])))')" >> "$GITHUB_OUTPUT"
           echo "tier2=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier2",[])))')" >> "$GITHUB_OUTPUT"
@@ -53,11 +55,11 @@ jobs:
   build-tier0:
     runs-on: [self-hosted, "${{ matrix.arch }}"]
     needs: [frontend, matrix]
-    if: needs.matrix.outputs.tier0 != '[]'
+    if: ${{ needs.matrix.outputs.tier0 != '[]' }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        arch: ${{ fromJson(needs.matrix.outputs.archs) }}
         branch: ${{ fromJson(needs.matrix.outputs.tier0) }}
     steps:
       - name: Checkout repository
@@ -79,16 +81,17 @@ jobs:
         run: |
           python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
           python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
-        continue-on-error: true
 
   build-tier1:
     runs-on: [self-hosted, "${{ matrix.arch }}"]
     needs: [frontend, matrix, build-tier0]
-    if: needs.matrix.outputs.tier1 != '[]'
+    # Run even if a sibling in build-tier0 failed — a missing base image will
+    # fail tier1 naturally instead of letting the workflow pass silently.
+    if: ${{ always() && needs.matrix.outputs.tier1 != '[]' }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        arch: ${{ fromJson(needs.matrix.outputs.archs) }}
         branch: ${{ fromJson(needs.matrix.outputs.tier1) }}
     steps:
       - name: Checkout repository
@@ -110,16 +113,15 @@ jobs:
         run: |
           python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
           python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
-        continue-on-error: true
 
   build-tier2:
     runs-on: [self-hosted, "${{ matrix.arch }}"]
     needs: [frontend, matrix, build-tier1]
-    if: needs.matrix.outputs.tier2 != '[]'
+    if: ${{ always() && needs.matrix.outputs.tier2 != '[]' }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        arch: ${{ fromJson(needs.matrix.outputs.archs) }}
         branch: ${{ fromJson(needs.matrix.outputs.tier2) }}
     steps:
       - name: Checkout repository
@@ -141,7 +143,6 @@ jobs:
         run: |
           python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
           python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
-        continue-on-error: true
 
   manifest:
     runs-on: ubuntu-latest

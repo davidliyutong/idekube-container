@@ -61,7 +61,9 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish ${{ inputs.branch }} (${{ inputs.lineup }})
-        run: python3 build.py publishx ${{ inputs.branch }} --lineup=${{ inputs.lineup }}
+        run: |
+          python3 build.py publishx ${{ inputs.branch }} --lineup=${{ inputs.lineup }} \
+            ${{ github.event_name == 'release' && '--release' || '' }}
 
   # --- Full-lineup mode: build all images ---
   publish-base:
@@ -70,6 +72,7 @@ jobs:
     uses: ./.github/workflows/_publish_lineup.yml
     with:
       lineup: base
+      release: ${{ github.event_name == 'release' }}
     secrets: inherit
 
   publish-ascend:
@@ -78,4 +81,5 @@ jobs:
     uses: ./.github/workflows/_publish_lineup.yml
     with:
       lineup: ascend
+      release: ${{ github.event_name == 'release' }}
     secrets: inherit

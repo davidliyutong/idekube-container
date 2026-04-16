@@ -27,6 +27,7 @@
     },
     "ascend": {
       "dockerargs_file": ".dockerargs.ascend",
+      "archs": ["arm64"],
       "images": [
         "featured/base",
         "featured/speit-ai",
