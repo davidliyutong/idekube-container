@@ -325,27 +325,45 @@ For multi-arch publish, you can also first publish each architecture with `make 
 
 ### Testing the Container
 
-Here is a checklist for testing the container:
+The project ships with an automated Playwright + pytest test system that runs each built image, exercises its services in a headless browser, and produces an HTML report. Test dependencies are managed by `uv` and installed automatically.
 
-- [x] Coder is working
-- [x] VNC is working, with `turbovnc` and `noVNC`, autocorrect resolution
-- [x] Jupyter is working
-- [x] SSH is working, with `websocat` proxy
-- [x] `glxgears` is working
-- [x] `chromium` is working, hardware acceleration is enabled
-- [x] `nvidia-smi` is working
-- [x] shell highlight is working
-- [x] `dind` is working
-- [x] Contaienr runs in the `nvidia` runtime class with GPU
-- [x] Container runs without GPU
-- [x] Container runs in the non-root user mode
-- [x] IDEKUBE_INIT_HOME works
-- [x] Access token auth works (query param, cookie, X-header)
-- [x] Cookie is set automatically when token is passed via query param
-- [x] `/ssh` is excluded from access token auth
-- [x] Agent gateway (`/agent`) is working
-- [x] Web terminal (`/terminal`) is working
-- [ ] Health check endpoint (`/health`) returns correct JSON and status codes
+**Prerequisites:** `docker` and `uv` must be installed. Target images must be built locally first (`make build BRANCH=...` or `make build_all`).
+
+**Running tests:**
+
+```bash
+# Test a single branch (mirrors `make build` — reads BRANCH and LINEUP env vars)
+make test BRANCH=featured/base
+make test BRANCH=jupyter/speit-ai LINEUP=ascend
+
+# Test every branch in the base lineup (runs up to MAX_PARALLEL containers in parallel)
+make test_all
+
+# Test every branch in the ascend lineup
+make test_all_ascend
+
+# Install test deps only (pytest, playwright, browser)
+make test_deps
+```
+
+**Output** is written to `.cache/test-output/` (ignored by git):
+
+- `report.html` / `report-<branch>.html` — self-contained HTML report with embedded screenshots
+- `screenshots/<branch>_<service>.png` — per-service Playwright screenshots
+- `logs/<branch>.log` — container `docker logs` output (attached to failed tests for debugging)
+
+**What is covered (per branch):**
+
+- [x] Coder, VNC (noVNC + TurboVNC), Jupyter, Web terminal (ttyd), Agent gateway (`/agent`) — browser-level service checks
+- [x] SSH via `websocat` proxy (TCP connect + `/ssh` HTTP endpoint)
+- [x] `/health` endpoint returns correct JSON with expected services and status codes
+- [x] Access token auth: unauthenticated blocked, query-param auth, cookie auto-set, cookie auth, `X-IDEKUBE-Container-Access-Token` header, `/ssh` excluded, wrong token rejected
+- [x] Landing page loads, shows available services, theme/language toggles
+- [x] Environment variables: `IDEKUBE_INIT_HOME`, `IDEKUBE_PREFERED_SHELL`, `IDEKUBE_USER_UID`, `IDEKUBE_AUTHORIZED_KEYS`, non-root user
+- [x] Docker-in-Docker — only for `featured/dind` and `featured/kathara`, skipped elsewhere
+- [x] GPU (`nvidia-smi`, `vglrun glxgears`, `chromium` with GPU) — only when NVIDIA runtime is detected; `glxgears`/`chromium` only for desktop branches (`featured/*`)
+
+Tests for unbuilt images, missing NVIDIA runtime, or non-applicable branches are automatically skipped with a clear reason.
 
 ## Known Issues
 

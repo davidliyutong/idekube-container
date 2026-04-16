@@ -20,13 +20,17 @@ type HTTPProber struct{}
 
 func (p *HTTPProber) Probe(svc ServiceConfig) bool {
 	client := &http.Client{Timeout: probeTimeout}
-	url := fmt.Sprintf("http://127.0.0.1:%d/", svc.Port)
+	probePath := svc.ProbePath
+	if probePath == "" {
+		probePath = "/"
+	}
+	url := fmt.Sprintf("http://127.0.0.1:%d%s", svc.Port, probePath)
 	resp, err := client.Get(url)
 	if err != nil {
 		return false
 	}
 	defer resp.Body.Close()
-	return resp.StatusCode >= 200 && resp.StatusCode < 300
+	return resp.StatusCode >= 200 && resp.StatusCode < 400
 }
 
 // WebSocketProber probes a service by attempting a WebSocket handshake
@@ -37,7 +41,11 @@ func (p *WebSocketProber) Probe(svc ServiceConfig) bool {
 	dialer := websocket.Dialer{
 		HandshakeTimeout: probeTimeout,
 	}
-	url := fmt.Sprintf("ws://127.0.0.1:%d/", svc.Port)
+	probePath := svc.ProbePath
+	if probePath == "" {
+		probePath = "/"
+	}
+	url := fmt.Sprintf("ws://127.0.0.1:%d%s", svc.Port, probePath)
 	conn, _, err := dialer.Dial(url, nil)
 	if err != nil {
 		return false

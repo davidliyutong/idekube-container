@@ -2,7 +2,8 @@
        build_all_ascend buildx_all_ascend publishx_all_ascend publish_all_ascend \
        manifest manifest_all manifest_all_ascend rmmanifest rmmanifest_all rmmanifest_all_ascend \
        prepare_qemu_files build_qemu_tools build_qemu_root build_qemu publish_qemu \
-       dev.run debug set_type frontend list deps ci-matrix
+       dev.run debug set_type frontend list deps ci-matrix \
+       test_deps test test_all test_all_ascend
 
 # Include .env file if it exists
 -include .env
@@ -142,6 +143,42 @@ dev.run:
 	docker run --name idekube-container -it --rm -p 8080:80 -p 8888:8888 -e IDEKUBE_INIT_HOME=true $(REGISTRY)/$(AUTHOR)/$(NAME):$(TAG)-$(ARCH)
 
 debug: build dev.run
+
+# ──────────────────────────────────────────────────────────────
+# Test targets
+# ──────────────────────────────────────────────────────────────
+TEST_OUTPUT := .cache/test-output
+
+test_deps:
+	cd tests && uv sync
+	cd tests && uv run playwright install chromium --with-deps
+
+# Single-branch test (mirrors `make build` — reads BRANCH and LINEUP env vars)
+test: test_deps
+	cd tests && uv run pytest \
+		--lineup=$(LINEUP) \
+		--branch=$(BRANCH) \
+		--output-dir=$(abspath $(TEST_OUTPUT)) \
+		--html=$(abspath $(TEST_OUTPUT))/report-$(subst /,-,$(BRANCH)).html --self-contained-html \
+		-v --tb=short
+
+# All-branches test (base lineup)
+test_all: test_deps
+	cd tests && uv run pytest \
+		--lineup=base \
+		--output-dir=$(abspath $(TEST_OUTPUT)) \
+		--html=$(abspath $(TEST_OUTPUT))/report.html --self-contained-html \
+		-n $(MAX_PARALLEL) --dist loadgroup \
+		-v --tb=short
+
+# All-branches test (ascend lineup)
+test_all_ascend: test_deps
+	cd tests && uv run pytest \
+		--lineup=ascend \
+		--output-dir=$(abspath $(TEST_OUTPUT)) \
+		--html=$(abspath $(TEST_OUTPUT))/report_ascend.html --self-contained-html \
+		-n $(MAX_PARALLEL) --dist loadgroup \
+		-v --tb=short
 
 # ──────────────────────────────────────────────────────────────
 # Legacy: set_type (kept for backward compat, no longer required)

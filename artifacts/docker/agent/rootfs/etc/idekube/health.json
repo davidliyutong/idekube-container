@@ -3,7 +3,7 @@
   "entry": "/terminal",
   "main": "terminal",
   "services": {
-    "terminal": { "port": 7681, "path": "/terminal" },
+    "terminal": { "port": 7681, "path": "/terminal", "probePath": "/" },
     "ssh":      { "port": 2222, "path": "/ssh" }
   }
 }

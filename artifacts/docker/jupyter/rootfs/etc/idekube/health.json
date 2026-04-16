@@ -3,7 +3,7 @@
   "entry": "/jupyter/",
   "main": "jupyter",
   "services": {
-    "jupyter": { "port": 8888, "path": "/jupyter/" },
+    "jupyter": { "port": 8888, "path": "/jupyter/", "probePath": "/jupyter" },
     "ssh":     { "port": 2222, "path": "/ssh" }
   }
 }

@@ -38,6 +38,27 @@ make set_type TYPE=base
 make set_type TYPE=ascend
 ```
 
+### Test Commands
+
+Tests use Playwright + pytest, managed by `uv`. Assumes images are already built locally via `make build` / `make build_all`. Output goes to `.cache/test-output/` (report.html, screenshots, container logs) — covered by `.gitignore`.
+
+```bash
+# Install test deps (pytest, playwright, chromium) — also invoked as a dependency of test targets
+make test_deps
+
+# Test a single branch — follows the same BRANCH/LINEUP convention as `make build`
+make test BRANCH=featured/base
+make test BRANCH=jupyter/speit-ai LINEUP=ascend
+
+# Test every branch in the base lineup (parallel workers = MAX_PARALLEL)
+make test_all
+
+# Test every branch in the ascend lineup
+make test_all_ascend
+```
+
+The test system covers health endpoint, landing page, every service (vnc/coder/jupyter/terminal/agent), SSH proxy, access token auth (query/cookie/header), env var configs (init home, shell, UID, SSH keys, non-root), DinD (only `featured/dind`/`featured/kathara`), and GPU tests (skipped when no NVIDIA runtime). Unbuilt images and non-applicable tests are skipped automatically.
+
 ### QEMU Container Build (nested VM isolation)
 
 ```bash

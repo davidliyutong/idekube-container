@@ -1,0 +1,21 @@
+[project]
+name = "idekube-container-tests"
+version = "0.0.1"
+requires-python = ">=3.10"
+dependencies = [
+    "pytest>=8.0",
+    "pytest-html>=4.0",
+    "pytest-playwright>=0.5",
+    "pytest-xdist>=3.5",
+    "playwright>=1.40",
+    "requests>=2.31",
+    "docker>=7.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+markers = [
+    "gpu: requires NVIDIA GPU runtime",
+    "privileged: requires --privileged docker flag",
+    "dind: requires Docker-in-Docker (featured/dind, featured/kathara only)",
+]
