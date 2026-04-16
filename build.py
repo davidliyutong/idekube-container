@@ -467,31 +467,40 @@ def run_publish(config, branch, lineup_name, dry_run=False, arch=None):
 # Manifest operations
 # ---------------------------------------------------------------------------
 
-def run_manifest(config, branch, lineup_name, dry_run=False):
-    """Create a multi-arch manifest for one image."""
+def run_manifest(config, branch, lineup_name, release=False, dry_run=False):
+    """Create a multi-arch manifest for one image.
+
+    When release=True, additionally creates a <latest_ref> manifest referencing
+    the same per-arch tags so a floating "latest" alias tracks this release.
+    """
     refs = compute_refs(config, branch, lineup_name)
     archs = get_lineup_archs(config, lineup_name)
     ref = refs["image_ref"]
     arch_refs = [f"{ref}-{a}" for a in archs]
 
-    cmds = [
-        (["docker", "manifest", "rm", ref], True),       # ignore errors
-        (["docker", "manifest", "create", ref, *arch_refs], False),
-    ]
-    for a in archs:
-        cmds.append((
-            ["docker", "manifest", "annotate", "--os", "linux", "--arch", a, ref, f"{ref}-{a}"],
-            False,
-        ))
-    cmds.append((["docker", "manifest", "push", ref], False))
+    targets = [ref]
+    if release:
+        targets.append(refs["latest_ref"])
 
-    for cmd, ignore_error in cmds:
-        if dry_run:
-            prefix = "[dry-run] " + ("(ignore-error) " if ignore_error else "")
-            print(f"{prefix}{' '.join(cmd)}")
-        else:
-            subprocess.run(cmd, check=not ignore_error,
-                           capture_output=ignore_error)
+    for target in targets:
+        cmds = [
+            (["docker", "manifest", "rm", target], True),       # ignore errors
+            (["docker", "manifest", "create", target, *arch_refs], False),
+        ]
+        for a in archs:
+            cmds.append((
+                ["docker", "manifest", "annotate", "--os", "linux", "--arch", a, target, f"{ref}-{a}"],
+                False,
+            ))
+        cmds.append((["docker", "manifest", "push", target], False))
+
+        for cmd, ignore_error in cmds:
+            if dry_run:
+                prefix = "[dry-run] " + ("(ignore-error) " if ignore_error else "")
+                print(f"{prefix}{' '.join(cmd)}")
+            else:
+                subprocess.run(cmd, check=not ignore_error,
+                               capture_output=ignore_error)
 
 
 def run_rmmanifest(config, branch, lineup_name, dry_run=False):
@@ -508,11 +517,11 @@ def run_rmmanifest(config, branch, lineup_name, dry_run=False):
             subprocess.run(cmd, check=False)
 
 
-def run_manifest_all(config, lineup_name, dry_run=False):
+def run_manifest_all(config, lineup_name, release=False, dry_run=False):
     """Create multi-arch manifests for all images in a lineup."""
     images = get_lineup_images(config, lineup_name)
     for image in images:
-        run_manifest(config, image, lineup_name, dry_run=dry_run)
+        run_manifest(config, image, lineup_name, release=release, dry_run=dry_run)
 
 
 def run_rmmanifest_all(config, lineup_name, dry_run=False):
@@ -805,10 +814,16 @@ def main():
         p = sub.add_parser(cmd_name, parents=[common], help=f"{cmd_name} for a single image")
         p.add_argument("image", help="Image name (e.g., featured/base)")
         p.add_argument("--dry-run", action="store_true", help="Print commands without executing")
+        if cmd_name == "manifest":
+            p.add_argument("--release", action="store_true",
+                           help="Also push <branch>-latest[-postfix] manifest")
 
     for cmd_name in ("manifest-all", "rmmanifest-all"):
         p = sub.add_parser(cmd_name, parents=[common], help=f"{cmd_name} for a lineup")
         p.add_argument("--dry-run", action="store_true", help="Print commands without executing")
+        if cmd_name == "manifest-all":
+            p.add_argument("--release", action="store_true",
+                           help="Also push <branch>-latest[-postfix] manifests")
 
     # --- QEMU commands ---
     for cmd_name in ("qemu-prepare", "qemu-build-tools"):
@@ -896,10 +911,12 @@ def main():
     # Manifest
     elif args.command == "manifest":
         _validate_image_in_lineup(config, args.image, args.lineup)
-        run_manifest(config, args.image, args.lineup, dry_run=args.dry_run)
+        run_manifest(config, args.image, args.lineup,
+                     release=args.release, dry_run=args.dry_run)
 
     elif args.command == "manifest-all":
-        run_manifest_all(config, args.lineup, dry_run=args.dry_run)
+        run_manifest_all(config, args.lineup,
+                         release=args.release, dry_run=args.dry_run)
 
     elif args.command == "rmmanifest":
         _validate_image_in_lineup(config, args.image, args.lineup)

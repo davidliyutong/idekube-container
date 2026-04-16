@@ -1,5 +1,10 @@
 name: Publish Images (On-Premise)
 
+# Mirrors publish.yml end-to-end: same triggers, inputs, single-image mode, and
+# full-lineup dispatch via a reusable sub-workflow. The only difference is
+# runs-on — jobs target `[self-hosted]` runners instead of `ubuntu-latest`.
+# Both flavors use buildx (publishx) so the published tag shape is identical.
+
 on:
   workflow_dispatch:
     inputs:
@@ -9,11 +14,18 @@ on:
         options:
           - base
           - ascend
+          - all
         default: base
+      branch:
+        description: "Single image to build (e.g. featured/base). Leave empty to build all."
+        type: string
+        default: ""
+  release:
+    types: [published]
 
 jobs:
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -32,35 +44,11 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
 
-  matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      archs: ${{ steps.gen.outputs.archs }}
-      tier0: ${{ steps.gen.outputs.tier0 }}
-      tier1: ${{ steps.gen.outputs.tier1 }}
-      tier2: ${{ steps.gen.outputs.tier2 }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Generate build matrix
-        id: gen
-        run: |
-          MATRIX=$(python3 build.py ci-matrix-native --lineup=${{ inputs.lineup }})
-          echo "archs=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("archs",[])))')" >> "$GITHUB_OUTPUT"
-          echo "tier0=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier0",[])))')" >> "$GITHUB_OUTPUT"
-          echo "tier1=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier1",[])))')" >> "$GITHUB_OUTPUT"
-          echo "tier2=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier2",[])))')" >> "$GITHUB_OUTPUT"
-
-  build-tier0:
-    runs-on: [self-hosted, "${{ matrix.arch }}"]
-    needs: [frontend, matrix]
-    if: ${{ needs.matrix.outputs.tier0 != '[]' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: ${{ fromJson(needs.matrix.outputs.archs) }}
-        branch: ${{ fromJson(needs.matrix.outputs.tier0) }}
+  # --- Single-image mode: build just one flavor ---
+  publish-single:
+    runs-on: [self-hosted]
+    needs: frontend
+    if: ${{ inputs.branch != '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -77,88 +65,26 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push ${{ matrix.branch }} (${{ matrix.arch }})
+      - name: Publish ${{ inputs.branch }} (${{ inputs.lineup }})
         run: |
-          python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
-          python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
+          python3 build.py publishx ${{ inputs.branch }} --lineup=${{ inputs.lineup }} \
+            ${{ github.event_name == 'release' && '--release' || '' }}
 
-  build-tier1:
-    runs-on: [self-hosted, "${{ matrix.arch }}"]
-    needs: [frontend, matrix, build-tier0]
-    # Run even if a sibling in build-tier0 failed — a missing base image will
-    # fail tier1 naturally instead of letting the workflow pass silently.
-    if: ${{ always() && needs.matrix.outputs.tier1 != '[]' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: ${{ fromJson(needs.matrix.outputs.archs) }}
-        branch: ${{ fromJson(needs.matrix.outputs.tier1) }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
+  # --- Full-lineup mode: reuse sub-workflow, one invocation per lineup ---
+  publish-base:
+    needs: frontend
+    if: ${{ inputs.branch == '' && (github.event_name == 'release' || inputs.lineup == 'base' || inputs.lineup == 'all') }}
+    uses: ./.github/workflows/_publish_on_premise_lineup.yml
+    with:
+      lineup: base
+      release: ${{ github.event_name == 'release' }}
+    secrets: inherit
 
-      - name: Download frontend dist
-        uses: actions/download-artifact@v5
-        with:
-          name: frontend-dist
-          path: frontend/dist/
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push ${{ matrix.branch }} (${{ matrix.arch }})
-        run: |
-          python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
-          python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
-
-  build-tier2:
-    runs-on: [self-hosted, "${{ matrix.arch }}"]
-    needs: [frontend, matrix, build-tier1]
-    if: ${{ always() && needs.matrix.outputs.tier2 != '[]' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: ${{ fromJson(needs.matrix.outputs.archs) }}
-        branch: ${{ fromJson(needs.matrix.outputs.tier2) }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Download frontend dist
-        uses: actions/download-artifact@v5
-        with:
-          name: frontend-dist
-          path: frontend/dist/
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push ${{ matrix.branch }} (${{ matrix.arch }})
-        run: |
-          python3 build.py build ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
-          python3 build.py publish ${{ matrix.branch }} --lineup=${{ inputs.lineup }} --arch=${{ matrix.arch }}
-
-  manifest:
-    runs-on: ubuntu-latest
-    needs: [build-tier0, build-tier1, build-tier2]
-    if: ${{ always() && (needs.build-tier0.result == 'success' || needs.build-tier1.result == 'success' || needs.build-tier2.result == 'success') }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Create manifests and clean up per-arch tags
-        run: |
-          python3 build.py manifest-all --lineup=${{ inputs.lineup }}
-          python3 build.py rmmanifest-all --lineup=${{ inputs.lineup }}
+  publish-ascend:
+    needs: frontend
+    if: ${{ inputs.branch == '' && (github.event_name == 'release' || inputs.lineup == 'ascend' || inputs.lineup == 'all') }}
+    uses: ./.github/workflows/_publish_on_premise_lineup.yml
+    with:
+      lineup: ascend
+      release: ${{ github.event_name == 'release' }}
+    secrets: inherit
