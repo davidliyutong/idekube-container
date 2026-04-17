@@ -200,6 +200,13 @@ def compute_refs(config, branch, lineup_name):
 
     lineup = get_lineup(config, lineup_name)
     docker_args = parse_dockerargs(lineup["dockerargs_file"])
+    # Allow environment variables to override values from the dockerargs file.
+    # This lets CI (GitHub Actions, GitLab) inject things like APT_MIRROR /
+    # USE_APT_MIRROR / PIP_MIRROR_URL without editing the checked-in file.
+    for key in list(docker_args.keys()):
+        env_value = os.environ.get(key)
+        if env_value is not None:
+            docker_args[key] = env_value
     tag_postfix = docker_args.get("TAG_POSTFIX", "")
 
     slug = branch_to_slug(branch)
