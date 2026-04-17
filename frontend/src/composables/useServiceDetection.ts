@@ -1,9 +1,10 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onScopeDispose } from 'vue'
 import { serviceConfigs } from '../config/services'
 import { landingTranslations } from '../config/translations'
 import { useLanguage } from './useLanguage'
 
 const PROBE_TIMEOUT_MS = 2000
+const REFRESH_INTERVAL_MS = 10_000
 
 export interface DetectedService {
   path: string
@@ -146,6 +147,9 @@ export function useServiceDetection() {
   }
 
   detectServices()
+
+  const intervalId = setInterval(detectServices, REFRESH_INTERVAL_MS)
+  onScopeDispose(() => clearInterval(intervalId))
 
   return { services, loading }
 }
