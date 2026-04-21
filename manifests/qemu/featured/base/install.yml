@@ -336,36 +336,22 @@
     # Create systemd services
     - name: Create systemd services
       block:
-      - name: Create startxfce4 systemd service
-        copy:
-          dest: /etc/systemd/system/Xorg.service
-          content: |
-            [Unit]
-            Description=Start Xorg 
-            After=network.target
-
-            [Service]
-            Type=simple
-            ExecStart=/usr/bin/Xorg :0
-            Restart=on-failure
-            RestartSec=5
-
-            [Install]
-            WantedBy=multi-user.target
       - name: Create TurboVNC systemd service
         copy:
           dest: /etc/systemd/system/turbovnc.service
           content: |
             [Unit]
             Description=TurboVNC Server
-            After=Xorg.service
-            Requires=Xorg.service
+            After=network.target
 
             [Service]
-            Type=forking
+            Type=simple
             User=idekube
             Environment="LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so"
-            ExecStart=/opt/TurboVNC/bin/vncserver :1 -geometry 1280x800 -depth 24 -SecurityTypes None -vgl
+            # vncserver (without -fg) stays in foreground while xstartup runs,
+            # so with our blocking xstartup the wrapper becomes a long-lived
+            # main process — Type=simple tracks it correctly.
+            ExecStart=/opt/TurboVNC/bin/vncserver :1 -geometry 1280x800 -depth 24 -SecurityTypes None -vgl -fg
             ExecStop=/opt/TurboVNC/bin/vncserver -kill :1
             Restart=on-failure
             RestartSec=5
