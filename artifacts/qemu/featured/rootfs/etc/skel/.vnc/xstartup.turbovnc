@@ -1,9 +1,24 @@
 #!/bin/bash
-# Keep Xvnc alive even if the XFCE session exits. TurboVNC's vncserver
-# wrapper kills Xvnc when this script returns, so we spawn XFCE in the
-# background and block forever — any session-level hiccup (user systemd,
-# DBus activation) no longer tears down the VNC server.
+# Keep Xvnc alive across xfce crashes. Loops forever so any session-level
+# hiccup (dbus, user systemd, xfce panel) doesn't tear down the VNC server.
+#
+# Auto-detects a 3D-capable GPU and wraps xfce4-session with `vglrun -d egl`
+# when a DRM render node is present, so GL apps launched inside xfce inherit
+# GPU acceleration. QEMU's emulated VGA doesn't create render nodes, so this
+# naturally falls through to a plain xfce4-session on GPU-less VMs.
 xsetroot -solid "#222222" 2>/dev/null || true
-eval "$(dbus-launch --sh-syntax)" 2>/dev/null || true
-vglrun startxfce4 &
-exec sleep infinity
+
+gl_wrap=()
+if ls /dev/dri/renderD* >/dev/null 2>&1 && command -v vglrun >/dev/null 2>&1; then
+  gl_wrap=(vglrun -d egl)
+  echo "[$(date '+%F %T')] GPU render node detected; wrapping with: ${gl_wrap[*]}"
+else
+  echo "[$(date '+%F %T')] no GPU render node; running xfce without VGL"
+fi
+
+while true; do
+  echo "[$(date '+%F %T')] starting xfce4-session"
+  "${gl_wrap[@]}" xfce4-session
+  echo "[$(date '+%F %T')] xfce4-session exited with code $?"
+  sleep 3
+done

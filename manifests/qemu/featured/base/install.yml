@@ -347,11 +347,8 @@
             [Service]
             Type=simple
             User=idekube
-            Environment="LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so"
-            # vncserver (without -fg) stays in foreground while xstartup runs,
-            # so with our blocking xstartup the wrapper becomes a long-lived
-            # main process — Type=simple tracks it correctly.
-            ExecStart=/opt/TurboVNC/bin/vncserver :1 -geometry 1280x800 -depth 24 -SecurityTypes None -vgl -fg
+            WorkingDirectory=/home/idekube
+            ExecStart=/usr/local/bin/turbovnc-launch.sh :1 -geometry 1280x800 -depth 24 -SecurityTypes None -fg -xstartup /home/idekube/.vnc/xstartup.turbovnc
             ExecStop=/opt/TurboVNC/bin/vncserver -kill :1
             Restart=on-failure
             RestartSec=5
