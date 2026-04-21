@@ -5,13 +5,47 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: publish-qemu-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  publish-qemu:
+  matrix:
     runs-on: ubuntu-latest
     env:
-      # Opt into Node.js 24 for JavaScript actions (e.g. actions/upload-artifact@v5),
-      # which silences the Node 20 deprecation warning ahead of the 2026-06-02 forced switch.
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    outputs:
+      tier0: ${{ steps.gen.outputs.tier0 }}
+      tier1: ${{ steps.gen.outputs.tier1 }}
+      branches: ${{ steps.gen.outputs.branches }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Generate QEMU build matrix
+        id: gen
+        run: |
+          MATRIX=$(python3 build.py qemu-ci-matrix)
+          echo "tier0=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier0",[])))')" >> "$GITHUB_OUTPUT"
+          echo "tier1=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier1",[])))')" >> "$GITHUB_OUTPUT"
+          echo "branches=$(echo "$MATRIX" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(json.dumps([b for tier in d.values() for b in tier]))')" >> "$GITHUB_OUTPUT"
+
+  build-tier0:
+    needs: matrix
+    if: ${{ needs.matrix.outputs.tier0 != '[]' }}
+    runs-on: ${{ matrix.runner }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.matrix.outputs.tier0) }}
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -40,17 +74,117 @@ jobs:
           path: |
             .cache/qemu_files
             .cache/qemu_images
-          key: qemu-cache-${{ runner.os }}-${{ hashFiles('scripts/shell/prepare_qemu_files.sh', 'scripts/shell/prepare_qemu_images.sh') }}
+          key: qemu-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/shell/prepare_qemu_files.sh', 'scripts/shell/prepare_qemu_images.sh') }}
           restore-keys: |
-            qemu-cache-${{ runner.os }}-
+            qemu-cache-${{ runner.os }}-${{ runner.arch }}-
 
-      - name: Build and publish all QEMU images
-        run: python3 build.py qemu-publish-all
+      - name: Build and publish ${{ matrix.branch }} (${{ matrix.arch }})
+        env:
+          BRANCH: ${{ matrix.branch }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          python3 build.py qemu-prepare
+          python3 build.py qemu-build-tools
+          python3 build.py qemu-build-root ${{ matrix.branch }}
+          python3 build.py qemu-build ${{ matrix.branch }}
+          python3 build.py qemu-publish ${{ matrix.branch }}
 
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: qemu-logs
+          name: qemu-logs-${{ matrix.branch }}-${{ matrix.arch }}
           path: /tmp/qemu-*.log
           if-no-files-found: ignore
+
+  build-tier1:
+    needs: [matrix, build-tier0]
+    if: ${{ always() && needs.matrix.outputs.tier1 != '[]' }}
+    runs-on: ${{ matrix.runner }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.matrix.outputs.tier1) }}
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-x86 \
+            qemu-system-aarch64 \
+            qemu-utils \
+            cloud-image-utils \
+            ansible \
+            sshpass \
+            rsync
+
+      - name: Cache QEMU files
+        uses: actions/cache@v5
+        with:
+          path: |
+            .cache/qemu_files
+            .cache/qemu_images
+          key: qemu-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/shell/prepare_qemu_files.sh', 'scripts/shell/prepare_qemu_images.sh') }}
+          restore-keys: |
+            qemu-cache-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Build and publish ${{ matrix.branch }} (${{ matrix.arch }})
+        env:
+          BRANCH: ${{ matrix.branch }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          python3 build.py qemu-prepare
+          python3 build.py qemu-build-tools
+          python3 build.py qemu-build-root ${{ matrix.branch }}
+          python3 build.py qemu-build ${{ matrix.branch }}
+          python3 build.py qemu-publish ${{ matrix.branch }}
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: qemu-logs-${{ matrix.branch }}-${{ matrix.arch }}
+          path: /tmp/qemu-*.log
+          if-no-files-found: ignore
+
+  manifest:
+    runs-on: ubuntu-latest
+    needs: [matrix, build-tier0, build-tier1]
+    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && needs.matrix.outputs.branches != '[]' }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.matrix.outputs.branches) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create multi-arch manifest for ${{ matrix.branch }}
+        env:
+          BRANCH: ${{ matrix.branch }}
+        run: python3 build.py qemu-manifest ${{ matrix.branch }}

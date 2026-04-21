@@ -20,6 +20,7 @@ jobs:
       tier0: ${{ steps.gen.outputs.tier0 }}
       tier1: ${{ steps.gen.outputs.tier1 }}
       tier2: ${{ steps.gen.outputs.tier2 }}
+      tier3: ${{ steps.gen.outputs.tier3 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -31,6 +32,7 @@ jobs:
           echo "tier0=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier0",[])))')" >> "$GITHUB_OUTPUT"
           echo "tier1=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier1",[])))')" >> "$GITHUB_OUTPUT"
           echo "tier2=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier2",[])))')" >> "$GITHUB_OUTPUT"
+          echo "tier3=$(echo "$MATRIX" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin).get("tier3",[])))')" >> "$GITHUB_OUTPUT"
 
   publish-tier0:
     runs-on: ubuntu-latest
@@ -101,6 +103,35 @@ jobs:
       fail-fast: false
       matrix:
         branch: ${{ fromJson(needs.matrix.outputs.tier2) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v5
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish ${{ matrix.branch }}
+        run: |
+          python3 build.py publishx ${{ matrix.branch }} --lineup=${{ inputs.lineup }} \
+            ${{ inputs.release && '--release' || '' }}
+
+  publish-tier3:
+    runs-on: ubuntu-latest
+    needs: [matrix, publish-tier2]
+    if: ${{ always() && needs.matrix.outputs.tier3 != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.matrix.outputs.tier3) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5

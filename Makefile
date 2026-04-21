@@ -120,13 +120,13 @@ rmmanifest_all_ascend:
 prepare_qemu_files:
 	@python3 build.py qemu-prepare
 
-build_qemu_tools:
+build_qemu_tools: prepare_qemu_files
 	@python3 build.py qemu-build-tools
 
-build_qemu_root:
+build_qemu_root: build_qemu_tools frontend
 	@python3 build.py qemu-build-root $(BRANCH)
 
-build_qemu:
+build_qemu: build_qemu_root
 	@python3 build.py qemu-build $(BRANCH)
 
 publish_qemu:

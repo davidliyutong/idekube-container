@@ -1,4 +1,11 @@
-FROM ubuntu:24.04 AS builder
+ARG BASE_IMAGE=ubuntu:24.04
+
+FROM golang:1.25-alpine AS healthcheck-builder
+WORKDIR /build
+COPY tools/idekube-healthcheck/ .
+RUN go mod download && go build -o /idekube-healthcheck .
+
+FROM ${BASE_IMAGE} AS builder
 
 ARG QEMU_VERSION=10.2.0
 
@@ -59,6 +66,7 @@ RUN apt-get update && \
 
 # Copy QEMU deb from builder
 COPY --from=builder /tmp/qemu-install/usr/local /usr/local/
+COPY --from=healthcheck-builder /idekube-healthcheck /usr/local/bin/idekube-healthcheck
 
 ARG ROOT_DISK_IMAGE_DIR=""
 WORKDIR /var/lib/idekube/

@@ -20,8 +20,10 @@ on:
         description: "Single image to build (e.g. featured/base). Leave empty to build all."
         type: string
         default: ""
-  release:
-    types: [published]
+
+concurrency:
+  group: publish-on-premise-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   frontend:

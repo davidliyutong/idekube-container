@@ -18,6 +18,10 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   frontend:
     runs-on: ubuntu-latest

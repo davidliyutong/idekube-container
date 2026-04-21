@@ -45,7 +45,7 @@
             groups: docker
             append: yes
 
-    - name: Setup Kathara and network tools
+    - name: Setup Kathara (amd64 only)
       block:
         - name: Add Kathara PPA
           apt_repository:
@@ -56,18 +56,25 @@
           apt:
             name:
               - kathara
-              - nano
-              - gedit
-              - xterm
-              - wireshark
-              - iperf
-              - iperf3
-              - netcat-traditional
-              - tcpdump
             state: present
             update_cache: yes
+      when: ansible_architecture == "x86_64"
 
-    - name: Setup netcap
+    - name: Install network tools
+      apt:
+        name:
+          - nano
+          - gedit
+          - xterm
+          - wireshark
+          - iperf
+          - iperf3
+          - netcat-traditional
+          - tcpdump
+        state: present
+        update_cache: yes
+
+    - name: Setup netcap (amd64 only)
       block:
         - name: Download netcap
           get_url:
@@ -95,6 +102,7 @@
           loop:
             - /tmp/netcap.tar.gz
             - "/tmp/netcap_{{ netcap_version }}_linux_amd64_libc"
+      when: ansible_architecture == "x86_64"
 
     - name: Setup Kathara Labs and Docker configuration
       block:

@@ -60,7 +60,12 @@ fi
 if [[ "${ARCH}" == "arm64" || "${ARCH}" == "aarch64" ]]; then
     QEMU_BIN="qemu-system-aarch64"
     MACHINE_TYPE="virt"
-    FIRMWARE_OPTS="-drive if=pflash,format=raw,readonly=on,file=./uefi/edk2-aarch64-code.fd -drive if=pflash,format=raw,file=./uefi/edk2-arm-vars.fd"
+    if [[ -f "./uefi/edk2-aarch64-code.fd" && -f "./uefi/edk2-arm-vars.fd" ]]; then
+        FIRMWARE_OPTS="-drive if=pflash,format=raw,readonly=on,file=./uefi/edk2-aarch64-code.fd -drive if=pflash,format=raw,file=./uefi/edk2-arm-vars.fd"
+    else
+        FIRMWARE_OPTS=""
+        echo "Warning: aarch64 UEFI firmware not found, booting without UEFI" >&2
+    fi
 elif [[ "${ARCH}" == "x86_64" ]]; then
     QEMU_BIN="qemu-system-x86_64"
     MACHINE_TYPE="q35"

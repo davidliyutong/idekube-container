@@ -195,7 +195,12 @@ The following Dockerfiles exist but are not part of the default build targets:
 
 ### QEMU Container Tags
 
-QEMU-wrapped images are published as `davidliyutong/idekube-container-qemu:<tag>-<version>`. These run a lightweight VM inside the container for workload isolation.
+QEMU-wrapped images are published as `davidliyutong/idekube-container-qemu:<tag>-<version>`. These embed a provisioned Ubuntu VM inside a Docker container for full workload isolation. Services inside the VM expose the same nginx reverse proxy on port 80 as the native `featured/` images.
+
+| Tag | Description | Base VM |
+| --- | --- | --- |
+| `featured-base` | Full desktop (XFCE + noVNC) + Coder + SSH + VirtualGL + Miniconda, isolated in a VM | Ubuntu 24.04 |
+| `featured-kathara` | `featured-base` VM + Docker-in-Docker + Kathara network emulation (amd64 only) | `featured-base` VM |
 
 ## Usage
 
@@ -293,29 +298,61 @@ To build the container with Ascend support, run `make set_type TYPE=ascend` befo
 
 ## QEMU Container Build
 
-Certain applications, such as Kathara, requires the container to run in privileged mode. This is potentially dangerous if the user could run arbitrary code in the container. To mitigate this, a QEMU-based container is provided that runs a lightweight VM inside the container, isolating the host from the container.
+Some workloads (e.g. Kathara network emulation, Docker-in-Docker) require privileged mode, which is a security risk when users can run arbitrary code. The QEMU series solves this by embedding a full Ubuntu VM inside a Docker container — the host kernel is never exposed to the workload. Port 80 on the container still serves the same nginx reverse proxy (VNC, Coder, SSH, `/health`) as the native `featured/` images.
 
-To build the QEMU container, set the `BRANCH` variable to the desired branch (e.g. `featured/base`), then use `make build_qemu_root` to build the root disk for the VM, and `make build_qemu` to build the QEMU container image. You need to have `qemu-system-x86_64` or `qemu-system-aarch64` installed on your host machine, depending on the architecture you are building for.
+### How it works
 
-> Use `make build_qemu_all` to build all branches sequentially.
+At runtime, the container boots the provisioned VM image using QEMU (with KVM acceleration when available, otherwise software emulation). The VM runs systemd and all services directly. `startup.sh` inside the container generates a cloud-init config that injects `IDEKUBE_*` settings (access token, SSH keys, UID remapping) into the VM on first boot via `vm-init.sh`.
 
-### Dependencies
+### Build Pipeline
 
-- QEMU >= 6.2
-- sshpass (can be installed via `brew install sshpass` or `apt-get install sshpass`)
+Each step depends on the previous one — `make build_qemu` triggers the full chain automatically.
 
-### QEMU Container Variables
+```bash
+# Step 1 — Download UEFI firmware blobs and Ubuntu 24.04 cloud images
+make prepare_qemu_files
 
-| Name                     | Description                                  | Default |
-| ------------------------ | -------------------------------------------- | ------- |
-| `IDEKUBE_VM_MEMORY`      | Memory allocated to the QEMU VM              | `"2G"`  |
-| `IDEKUBE_VM_CPU`         | Number of CPU cores allocated to the QEMU VM | `"2"`   |
-| `IDEKUBE_VM_DISK_SIZE`   | Disk size for the QEMU VM root filesystem    | `"20G"` |
-| `IDEKUBE_MONITOR_PORT`   | Expose QEMU monitor port from the VM         | `23`    |
-| `IDEKUBE_SSH_PORT`       | Expose SSH port from the VM                  | `22`    |
-| `IDEKUBE_WEB_PORT`       | Expose web services port from the VM         | `80`    |
-| `IDEKUBE_VM_HEADLESS`    | Run the VM in headless mode                  | `true`  |
-| `IDEKUBE_VM_DISABLE_KVM` | Disable KVM acceleration for the QEMU VM     | `false` |
+# Step 2 — Build cloud-localds tool and QEMU engine Docker image
+make build_qemu_tools
+
+# Step 3 — Boot the engine, provision the VM via Ansible, produce root.img
+make build_qemu_root BRANCH=featured/base
+
+# Step 4 — Package root.img + UEFI firmware into the final Docker image
+make build_qemu BRANCH=featured/base
+```
+
+`build.py` stamps completed stages so re-runs skip already-done work. To publish:
+
+```bash
+make publish_qemu BRANCH=featured/base
+```
+
+### Build Dependencies
+
+| Dependency | Purpose | Install |
+| --- | --- | --- |
+| Docker | All build stages | — |
+| `sshpass` | Ansible SSH during provisioning | `brew install sshpass` / `apt install sshpass` |
+| `ansible-playbook` | VM provisioning (step 3) | `pip install ansible` |
+
+Native QEMU is **not** required — the engine is built as a Docker image in step 2. KVM on the build host is optional but speeds up provisioning significantly.
+
+### QEMU Runtime Variables
+
+These are set as Docker environment variables on the final container:
+
+| Name                     | Description                                    | Default  |
+| ------------------------ | ---------------------------------------------- | -------- |
+| `IDEKUBE_VM_MEMORY`      | Memory allocated to the VM                     | `4G`     |
+| `IDEKUBE_VM_CPU`         | vCPU count                                     | `2`      |
+| `IDEKUBE_VM_DISK_SIZE`   | Root disk size (resized on first boot)         | `20G`    |
+| `IDEKUBE_SSH_PORT`       | Host port forwarded to VM SSH (22)             | `22`     |
+| `IDEKUBE_WEB_PORT`       | Host port forwarded to VM nginx (80)           | `80`     |
+| `IDEKUBE_MONITOR_PORT`   | QEMU monitor port (debugging)                  | `23`     |
+| `IDEKUBE_VM_DISABLE_KVM` | Force software emulation even when KVM present | `false`  |
+
+The `IDEKUBE_*` variables from the native images (`IDEKUBE_ACCESS_TOKEN`, `IDEKUBE_AUTHORIZED_KEYS`, `IDEKUBE_USER_UID`, etc.) are also supported — `startup.sh` injects them into the VM via cloud-init on each boot.
 
 ### Publishing
 

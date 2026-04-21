@@ -31,7 +31,8 @@ QEMU commands:
     qemu-build-tools        Build cloud-localds and QEMU engine images
     qemu-build-root <br>    Provision root disk via QEMU VM
     qemu-build <branch>     Build final QEMU Docker image
-    qemu-publish <branch>   Push QEMU image to registry
+    qemu-publish <branch>   Push QEMU image to registry (arch-tagged)
+    qemu-manifest <branch>  Create and push multi-arch manifest
     qemu-build-all          Full pipeline for all QEMU branches
     qemu-publish-all        Full pipeline + push for all QEMU branches
 
@@ -662,6 +663,17 @@ def qemu_publish(config, branch, dry_run=False):
     subprocess.run(cmd, check=True, env=env)
 
 
+def qemu_manifest(config, branch, dry_run=False):
+    """Create and push a multi-arch manifest for a QEMU branch."""
+    cmd = ["bash", "scripts/shell/manifest_qemu.sh"]
+    env = {**os.environ, "BRANCH": branch}
+    if dry_run:
+        print(f"[dry-run] BRANCH={branch} {' '.join(cmd)}")
+        return
+    print(f"Creating multi-arch manifest for QEMU {branch}")
+    subprocess.run(cmd, check=True, env=env)
+
+
 def qemu_build_all(config, publish=False, dry_run=False):
     """Run the full QEMU pipeline for all branches, respecting deps."""
     # Shared preparation stages
@@ -837,7 +849,7 @@ def main():
         p = sub.add_parser(cmd_name, parents=[common], help=cmd_name)
         p.add_argument("--dry-run", action="store_true", help="Print commands without executing")
 
-    for cmd_name in ("qemu-build-root", "qemu-build", "qemu-publish"):
+    for cmd_name in ("qemu-build-root", "qemu-build", "qemu-publish", "qemu-manifest"):
         p = sub.add_parser(cmd_name, parents=[common], help=cmd_name)
         p.add_argument("branch", help="QEMU branch (e.g., featured/base)")
         p.add_argument("--dry-run", action="store_true", help="Print commands without executing")
@@ -947,6 +959,9 @@ def main():
 
     elif args.command == "qemu-publish":
         qemu_publish(config, args.branch, dry_run=args.dry_run)
+
+    elif args.command == "qemu-manifest":
+        qemu_manifest(config, args.branch, dry_run=args.dry_run)
 
     elif args.command == "qemu-build-all":
         qemu_build_all(config, publish=False, dry_run=args.dry_run)

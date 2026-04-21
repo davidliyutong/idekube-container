@@ -1,0 +1,10 @@
+{
+  "branch": "featured/base",
+  "entry": "/vnc/",
+  "main": "vnc",
+  "services": {
+    "vnc":   { "port": 6081, "path": "/vnc/",   "probePath": "/" },
+    "coder": { "port": 3000, "path": "/coder/",  "probePath": "/" },
+    "ssh":   { "port": 2222, "path": "/ssh" }
+  }
+}

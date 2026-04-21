@@ -16,6 +16,9 @@ data
 frontend/node_modules
 frontend/dist
 
+# QEMU build artifacts dropped into source tree by build_qemu_root.sh
+artifacts/**/idekube-healthcheck
+
 # Env
 .dockerargs
 /.env

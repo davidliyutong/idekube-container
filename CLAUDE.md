@@ -61,14 +61,18 @@ The test system covers health endpoint, landing page, every service (vnc/coder/j
 
 ### QEMU Container Build (nested VM isolation)
 
+Each `make` target depends on the previous one; running `make build_qemu` triggers the full chain automatically.
+
 ```bash
-make prepare_qemu_files       # Download QEMU sources
-make prepare_qemu_images      # Prepare base images
-make build_qemu_tools         # Build cloud-localds tool
-make build_qemu_engine        # Build QEMU engine image
-make build_qemu_root BRANCH=featured/base  # Build root disk
-make build_qemu BRANCH=featured/base       # Build final QEMU container
+make prepare_qemu_files                    # Download UEFI firmware blobs + Ubuntu cloud images
+make build_qemu_tools                      # Build cloud-localds and QEMU engine (Dockerfile.engine)
+make build_qemu_root BRANCH=featured/base  # Provision root disk via Ansible inside a live VM
+make build_qemu BRANCH=featured/base       # Build final QEMU Docker image embedding the disk
 ```
+
+**Dependency chain:** `prepare_qemu_files` → `build_qemu_tools` → `build_qemu_root` → `build_qemu`
+
+`build.py` uses stamp files (`.cache/…/.ready`, `.created`, `.root_ready`, `.image_ready`) so completed stages are skipped on re-runs.
 
 ### Image Tagging
 
@@ -93,10 +97,15 @@ Images are tagged as `$REGISTRY/$AUTHOR/$NAME:$BRANCH-$GIT_TAG-$ARCH`. The `BRAN
 - `artifacts/docker/rootfs/startup.sh` — Main container entrypoint shared across flavors
 - `artifacts/docker/rootfs/authn.sh` — Access-token authentication setup script called by `startup.sh`
 - `tools/idekube-healthcheck/` — Go-based health check server (built via multi-stage Docker build, serves `/health` endpoint on port 9999)
-- `scripts/shell/` — Build helper scripts (`build_image.sh`, `buildx_image.sh`, `docker_common.sh`, etc.)
+- `scripts/shell/` — Build helper scripts (`build_image.sh`, `buildx_image.sh`, `docker_common.sh`, `build_qemu_root.sh`, etc.)
 - `scripts/make/` — Makefile includes (`docker.mk`, `qemu.mk`)
-- `manifests/qemu/` — Dockerfiles for QEMU-based nested VM containers
-- `artifacts/qemu/` — QEMU configs and startup scripts
+- `manifests/qemu/Dockerfile` — Final QEMU container image (embeds provisioned root disk, UEFI firmware, and `startup.sh`/`run.sh`)
+- `manifests/qemu/Dockerfile.engine` — QEMU engine image used during provisioning (`build_qemu_root`)
+- `manifests/qemu/<flavor>/<variant>/install.yml` — Ansible playbook run inside the VM to install software and configure systemd services
+- `artifacts/qemu/rootfs/` — Common VM rootfs overlay rsync'd into every QEMU branch (nginx access-token config, `vm-init.sh`, `idekube-healthcheck` binary extracted at build time, etc.)
+- `artifacts/qemu/<flavor>/rootfs/` — Flavor-specific rootfs overlay applied on top of the common layer (e.g. `featured/rootfs/` adds nginx site config, `health.json`, XFCE skel, noVNC index)
+- `artifacts/qemu/startup-scripts/` — Container-level entrypoint scripts (`startup.sh`, `run.sh`) COPY'd into the Docker images; not rsync'd into the VM
+- `artifacts/qemu/configs/` — Cloud-init `user-data.yaml` and `meta-data.yaml` used during VM provisioning
 - `.dockerargs.base` / `.dockerargs.ascend` — Build-arg files parsed line-by-line as `KEY=VALUE`
 
 ### Container Runtime

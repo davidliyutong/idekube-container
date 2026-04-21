@@ -411,6 +411,22 @@
 
             [Install]
             WantedBy=multi-user.target
+      - name: Create idekube-healthcheck systemd service
+        copy:
+          dest: /etc/systemd/system/idekube-healthcheck.service
+          content: |
+            [Unit]
+            Description=IDEKube Health Check Server
+            After=network.target
+
+            [Service]
+            Type=simple
+            ExecStart=/usr/local/bin/idekube-healthcheck
+            Restart=always
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
 
     # Enable and start services
     - name: Reload systemd daemon
@@ -429,6 +445,7 @@
         - turbovnc
         - novnc
         - code-server
+        - idekube-healthcheck
 
     - name: Add ENV VARIABLE to /etc/profile.d/idekube.sh
       copy:
@@ -436,7 +453,8 @@
         content: |
           export PATH="/opt/miniconda3/bin:$PATH:/opt/VirtualGL/bin:/opt/TurboVNC/bin"
           export NVIDIA_VISIBLE_DEVICES=all
-          export NVIDIA_DRIVER_CAPABILITIES=all,VGL_DISPLAY=egl
+          export NVIDIA_DRIVER_CAPABILITIES=all
+          export VGL_DISPLAY=egl
           export VNC_THREADS=2
           export LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
 
