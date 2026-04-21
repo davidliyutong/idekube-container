@@ -8,6 +8,13 @@
 # naturally falls through to a plain xfce4-session on GPU-less VMs.
 xsetroot -solid "#222222" 2>/dev/null || true
 
+# Export XAUTHORITY so X clients don't rely on the $HOME/.Xauthority fallback.
+# Without this, `sudo glxgears` (or any `sudo <x-app>`) fails: sudo's env_reset
+# keeps DISPLAY via env_keep but root's HOME is /root, and /root/.Xauthority
+# doesn't exist — the fallback lookup never finds idekube's MIT cookie. With
+# XAUTHORITY in the env, sudo forwards it and root reads the cookie directly.
+export XAUTHORITY="$HOME/.Xauthority"
+
 # Route any ad-hoc `vglrun <app>` the user types in a terminal through VGL's
 # EGL backend. VGL's default is the GLX backend, which tries to open display
 # `:0` — no such display exists on a headless VM and `vglrun glxgears` fails
@@ -16,6 +23,16 @@ xsetroot -solid "#222222" 2>/dev/null || true
 # otherwise. Exported so every child (xfce panel, terminals, menu launches)
 # inherits it.
 export VGL_DISPLAY=egl
+
+# Match the Docker featured-lineup container env (Dockerfile ENV + supervisord
+# environment=) so every process in the xfce tree has the VGL fakers preloaded.
+# Chromium's GPU process then sees VGL-intercepted GL/EGL calls rather than
+# Mesa's raw ones, which matters for GPU-equipped hosts where VGL forwards to
+# the real renderer. On a GPU-less VM it's a no-op for software WebGL (handled
+# by the Chromium-level --ignore-gpu-blocklist + --enable-unsafe-swiftshader
+# flags in the xfce launchers), but we still export it here for parity so the
+# two lineups behave identically on identical hardware.
+export LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
 
 gl_wrap=()
 if ls /dev/dri/renderD* >/dev/null 2>&1 && command -v vglrun >/dev/null 2>&1; then

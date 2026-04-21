@@ -360,6 +360,32 @@ For multi-arch publish, you can also first publish each architecture with `make 
 
 > Use `make publishx_all` to push all branches to the registry.
 
+### WSL2 Export (experimental, dev-only)
+
+A QEMU branch's provisioned root disk can be repackaged as a WSL2-importable rootfs tarball. This is a temporary dev tool — not published as an artifact, not exercised by CI.
+
+```bash
+# Source: prefers local .cache/<BRANCH>/images/root.img (produced by build_qemu_root),
+# falls back to extracting root.img from the built container image via `docker cp`.
+make build_wsl BRANCH=featured/base
+```
+
+Output: `.cache/<BRANCH>/images/wsl-rootfs.tar.gz`. The converter (`tools/utility/qemu-to-wsl/`) runs libguestfs inside Docker to:
+
+- enable systemd via `/etc/wsl.conf`,
+- blank `/etc/fstab` (the VM's UUID entries can't be honored under WSL),
+- clear `/etc/machine-id` and SSH host keys, and disable cloud-init,
+- stream the root filesystem out with `virt-tar-out | gzip`.
+
+Import on Windows:
+
+```powershell
+wsl --import idekube-featured-base C:\wsl\idekube-featured-base .cache\featured\base\images\wsl-rootfs.tar.gz
+wsl -d idekube-featured-base
+```
+
+Inside the WSL distro, the nginx reverse proxy on port 80 and `idekube-healthcheck` on port 9999 behave the same as inside QEMU (minus any services that require VM-specific devices).
+
 ### Testing the Container
 
 The project ships with an automated Playwright + pytest test system that runs each built image, exercises its services in a headless browser, and produces an HTML report. Test dependencies are managed by `uv` and installed automatically.

@@ -1,7 +1,7 @@
 .PHONY: build build_all buildx buildx_all publish publish_all publishx publishx_all \
        build_all_ascend buildx_all_ascend publishx_all_ascend publish_all_ascend \
        manifest manifest_all manifest_all_ascend rmmanifest rmmanifest_all rmmanifest_all_ascend \
-       prepare_qemu_files build_qemu_tools build_qemu_root build_qemu publish_qemu \
+       prepare_qemu_files build_qemu_tools build_qemu_root build_qemu publish_qemu build_wsl \
        dev.run debug set_type frontend list deps ci-matrix \
        test_deps test test_all test_all_ascend
 
@@ -135,6 +135,14 @@ publish_qemu:
 debug_qemu_root:
 	@echo "Starting QEMU VM natively for branch $(BRANCH)..."
 	@cd .cache/$(BRANCH)/ && ../../../artifacts/qemu/startup-scripts/run.sh
+
+# Convert a QEMU lineup's root.img to a WSL2-importable rootfs tarball.
+# Reads from .cache/$(BRANCH)/images/root.img, falls back to extracting from
+# the built container image via `docker cp`. Output:
+#   .cache/$(BRANCH)/images/wsl-rootfs.tar.gz
+# Temporary/dev tool — not part of the publish pipeline.
+build_wsl:
+	@BRANCH=$(BRANCH) bash scripts/shell/build_wsl.sh
 
 # ──────────────────────────────────────────────────────────────
 # Dev / debug targets

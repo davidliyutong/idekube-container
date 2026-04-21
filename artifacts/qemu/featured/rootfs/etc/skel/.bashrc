@@ -119,8 +119,14 @@ fi
 # Load VGL and DL faker libraries and activate conda
 export LD_PRELOAD=/usr/lib/libdlfaker.so:/usr/lib/libvglfaker.so
 
-# Change Default Chrome Settings to avoid sandbox issues
-alias chromium='/usr/bin/chromium --no-sandbox --use-angle=gl-egl'
+# Change Default Chrome Settings to avoid sandbox issues.
+# --use-angle=gl-egl is the normal path on Docker-lineup GPU hosts. On Xvnc
+# (QEMU lineup, no DRI3) Mesa EGL can't enumerate configs, so WebGL context
+# creation fails with "BindToCurrentSequence failed". Adding
+# --ignore-gpu-blocklist + --enable-unsafe-swiftshader lets Chromium fall back
+# to SwiftShader for WebGL when the real GL path fails — a no-op on a real GPU,
+# a working software fallback on headless Xvnc.
+alias chromium='/usr/bin/chromium --no-sandbox --use-angle=gl-egl --ignore-gpu-blocklist --enable-unsafe-swiftshader'
 
 # Conda initialize
 if [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then

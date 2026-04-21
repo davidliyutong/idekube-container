@@ -68,7 +68,10 @@ make prepare_qemu_files                    # Download UEFI firmware blobs + Ubun
 make build_qemu_tools                      # Build cloud-localds and QEMU engine (Dockerfile.engine)
 make build_qemu_root BRANCH=featured/base  # Provision root disk via Ansible inside a live VM
 make build_qemu BRANCH=featured/base       # Build final QEMU Docker image embedding the disk
+make build_wsl BRANCH=featured/base        # Dev-only: repackage root.img as a WSL2 rootfs tarball
 ```
+
+`build_wsl` is a temporary dev tool (not wired into `build.py` or CI). It lives at `tools/utility/qemu-to-wsl/` (Dockerfile + `convert.sh` running libguestfs `virt-tar-out` + `guestfish`) with host orchestration in `scripts/shell/build_wsl.sh`. Source disk is `.cache/<BRANCH>/images/root.img`, falling back to `docker cp` from the built `idekube-container-qemu` image. Output: `.cache/<BRANCH>/images/wsl-rootfs.tar.gz`.
 
 **Dependency chain:** `prepare_qemu_files` → `build_qemu_tools` → `build_qemu_root` → `build_qemu`
 

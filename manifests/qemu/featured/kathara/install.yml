@@ -38,6 +38,10 @@
             sh /tmp/get-docker.sh
           args:
             creates: /usr/bin/docker
+          environment:
+            DEBIAN_FRONTEND: noninteractive
+            NEEDRESTART_MODE: a
+            NEEDRESTART_SUSPEND: "1"
 
         - name: Add idekube user to docker group
           user:
