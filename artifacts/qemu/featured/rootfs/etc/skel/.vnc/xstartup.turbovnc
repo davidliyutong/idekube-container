@@ -8,6 +8,15 @@
 # naturally falls through to a plain xfce4-session on GPU-less VMs.
 xsetroot -solid "#222222" 2>/dev/null || true
 
+# Route any ad-hoc `vglrun <app>` the user types in a terminal through VGL's
+# EGL backend. VGL's default is the GLX backend, which tries to open display
+# `:0` — no such display exists on a headless VM and `vglrun glxgears` fails
+# with "Could not open display :0". EGL works in both cases: it uses the DRM
+# render node when a GPU is present, and Mesa's surfaceless llvmpipe path
+# otherwise. Exported so every child (xfce panel, terminals, menu launches)
+# inherits it.
+export VGL_DISPLAY=egl
+
 gl_wrap=()
 if ls /dev/dri/renderD* >/dev/null 2>&1 && command -v vglrun >/dev/null 2>&1; then
   gl_wrap=(vglrun -d egl)
