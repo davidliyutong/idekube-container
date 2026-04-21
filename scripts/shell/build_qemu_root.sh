@@ -286,6 +286,38 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             echo "Warning: frontend/dist not found, skipping landing page."
         fi
 
+        # Gracefully shut down the guest so late writes (healthcheck binary,
+        # systemd units, final rootfs rsync) actually land on the qcow2 disk.
+        # QEMU's cache=writethrough only flushes what the guest submits —
+        # the guest kernel's own page cache needs `sync` + a clean poweroff
+        # (ext4 journal) or writes from the last ~30s are lost when the trap
+        # SIGKILLs QEMU.
+        echo "Flushing guest filesystem..."
+        vm_ssh "sudo sync && sudo sync" || true
+
+        echo "Powering off VM for clean shutdown..."
+        # `systemctl poweroff` exits the SSH session as sshd is torn down,
+        # so a non-zero exit here is expected.
+        vm_ssh "sudo systemctl poweroff" || true
+
+        # Wait up to 60s for QEMU/container to exit on its own.
+        for _ in $(seq 1 30); do
+            if [[ "${VM_MODE}" == "native" ]]; then
+                kill -0 "${VM_PID}" 2>/dev/null || break
+            else
+                docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$" || break
+            fi
+            sleep 2
+        done
+
+        if [[ "${VM_MODE}" == "native" ]] && kill -0 "${VM_PID}" 2>/dev/null; then
+            echo "⚠ VM did not power off within 60s; cleanup trap will force-kill."
+        elif [[ "${VM_MODE}" == "docker" ]] && docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+            echo "⚠ Container did not exit within 60s; cleanup trap will force-stop."
+        else
+            echo "✓ VM powered off cleanly."
+        fi
+
         echo ""
         echo "✓ VM provisioning completed successfully!"
         exit 0
