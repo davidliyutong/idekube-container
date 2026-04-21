@@ -1,80 +1,14 @@
-ARG BASE_IMAGE=ubuntu:24.04
-
-FROM golang:1.25-alpine AS healthcheck-builder
-WORKDIR /build
-COPY tools/idekube-healthcheck/ .
-RUN go mod download && go build -o /idekube-healthcheck .
-
-FROM ${BASE_IMAGE} AS builder
-
-ARG QEMU_VERSION=10.2.0
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && \
-    apt-get install -y \
-            build-essential \
-            ninja-build \
-            meson \
-            git \
-            curl \
-            autoconf \
-            libtool \
-            clang \
-            flex \
-            bison \
-            libsysfs-dev \
-            cloud-image-utils \
-            libglib2.0-dev \
-            libgtk-3-dev \
-            libmount-dev \
-            libpixman-1-dev \
-            libusb-1.0 \
-            libslirp-dev \
-            python3 \
-            python3-pip && \
-            rm -rf /var/lib/apt/lists/*
-
-WORKDIR /tmp/qemu
-RUN curl -L -o "qemu-${QEMU_VERSION}.tar.xz" "https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz" && \
-    tar -xf "qemu-${QEMU_VERSION}.tar.xz" --strip-components=1 && \
-    rm "qemu-${QEMU_VERSION}.tar.xz"
-
-RUN ./configure --prefix=/usr/local --enable-vhost-user --enable-vhost-net --enable-kvm --enable-libusb --enable-opengl --enable-slirp --enable-vnc && \
-    cd build && \
-    make -j$(nproc) && \
-    make DESTDIR=/tmp/qemu-install install
-
-FROM ubuntu:24.04 AS runtime
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install dependencies
-RUN apt-get update && \
-    apt-get install -y \
-    bc \
-    jq \
-    cloud-image-utils \
-    libsysfs-dev \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libmount1 \
-    libpixman-1-0 \
-    libusb-1.0-0 \
-    libslirp0 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy QEMU deb from builder
-COPY --from=builder /tmp/qemu-install/usr/local /usr/local/
-COPY --from=healthcheck-builder /idekube-healthcheck /usr/local/bin/idekube-healthcheck
+# Reuse idekube-qemu-engine as the base: it already ships the pinned QEMU
+# build, cloud-localds, UEFI blobs, cloud-init templates, and /run.sh +
+# /startup.sh from artifacts/qemu/startup-scripts/. This image only layers
+# the provisioned root disk on top and flips the entrypoint from the engine's
+# debug shell to /startup.sh.
+ARG ENGINE_IMAGE=idekube-qemu-engine:latest
+FROM ${ENGINE_IMAGE} AS runtime
 
 ARG ROOT_DISK_IMAGE_DIR=""
 WORKDIR /var/lib/idekube/
-COPY .cache/qemu_files/*.fd ./uefi/
-COPY artifacts/qemu/configs/* ./configs/
 COPY ${ROOT_DISK_IMAGE_DIR} ./images/
 
-COPY artifacts/qemu/startup-scripts/* /
 WORKDIR /var/lib/data
-
 ENTRYPOINT [ "/startup.sh" ]

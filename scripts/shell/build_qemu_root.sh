@@ -240,6 +240,15 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         fi
         echo "✓ idekube-healthcheck binary resolved: ${HEALTHCHECK_BINARY}"
 
+        # Rsync common rootfs first, then branch-specific overlay on top
+        echo "Copying common rootfs from ${COMMON_ROOTFS}..."
+        vm_rsync "${COMMON_ROOTFS}/" "${SSH_USER}@localhost:/tmp/rootfs/"
+        if [[ -d "${BRANCH_ROOTFS}" ]]; then
+            echo "Copying branch rootfs overlay from ${BRANCH_ROOTFS}..."
+            vm_rsync "${BRANCH_ROOTFS}/" "${SSH_USER}@localhost:/tmp/rootfs/"
+        fi
+        echo "✓ rootfs copied successfully."
+
         # Apply ansible playbook
         PLAYBOOK="manifests/qemu/$BRANCH/install.yml"
         if [[ -f "${PLAYBOOK}" ]]; then
@@ -260,15 +269,6 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         else
             echo "Warning: Playbook not found: ${PLAYBOOK}"
         fi
-
-        # Rsync common rootfs first, then branch-specific overlay on top
-        echo "Copying common rootfs from ${COMMON_ROOTFS}..."
-        vm_rsync "${COMMON_ROOTFS}/" "${SSH_USER}@localhost:/tmp/rootfs/"
-        if [[ -d "${BRANCH_ROOTFS}" ]]; then
-            echo "Copying branch rootfs overlay from ${BRANCH_ROOTFS}..."
-            vm_rsync "${BRANCH_ROOTFS}/" "${SSH_USER}@localhost:/tmp/rootfs/"
-        fi
-        echo "✓ rootfs copied successfully."
 
         # Copy compiled frontend into nginx html root.
         # Must run AFTER the ansible playbook: the playbook apt-installs
