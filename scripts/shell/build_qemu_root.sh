@@ -194,8 +194,9 @@ if [[ -z "${VM_MODE}" ]]; then
         -e IDEKUBE_VM_MEMORY="${IDEKUBE_VM_MEMORY}" \
         -e IDEKUBE_VM_CPU="${IDEKUBE_VM_CPU}" \
         -e IDEKUBE_VM_DISK_SIZE="${IDEKUBE_VM_DISK_SIZE}" \
+        --workdir /var/lib/data \
         idekube-qemu-engine:latest \
-        /startup.sh
+        /run.sh
 
     VM_MODE="docker"
 

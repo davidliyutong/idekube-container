@@ -7,12 +7,14 @@
 # default "ubuntu" user (no password), making the Ansible SSH step
 # hang forever.
 #
-# Used only during Ansible provisioning (build_qemu_root.sh).  At
-# runtime the QEMU container's startup.sh generates a dynamic
-# user-data.yaml that injects SSH keys, UID remapping, and other
-# IDEKUBE_* settings via write_files / runcmd.  The access_token.conf
-# template is baked into the VM image; authn.sh performs the
-# placeholder replacement at VM boot based on /etc/idekube/runtime-env.
+# Used during Ansible provisioning (build_qemu_root.sh) as-is, and at
+# runtime as the base config that the QEMU container's startup.sh
+# patches in place: ssh_pwauth is flipped to false, and a write_files
+# entry for /etc/idekube/runtime-env plus a runcmd for vm-init.sh are
+# appended to inject SSH keys, UID remapping, and other IDEKUBE_*
+# settings.  The access_token.conf template is baked into the VM
+# image; authn.sh performs the placeholder replacement at VM boot
+# based on /etc/idekube/runtime-env.
 #
 # ssh_pwauth is true here because Ansible connects via sshpass during
 # build.  The runtime config sets ssh_pwauth: false and vm-init.sh

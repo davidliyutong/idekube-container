@@ -301,6 +301,16 @@
           depth: 1
           force: yes
 
+    # Remove stock nginx default-site symlink so the rsync below can
+    # replace it with our regular-file config. Without this, rsync
+    # follows the symlink and writes to sites-available/default instead
+    # of replacing the sites-enabled entry, leaving the shipped config
+    # effectively invisible under `ls sites-enabled/`.
+    - name: Remove stock nginx default-site symlink
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
     # Copy the rootfs
     - name: Sync rootfs files
       shell:
