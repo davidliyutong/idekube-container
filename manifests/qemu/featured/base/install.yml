@@ -317,6 +317,12 @@
         rsync -ar /tmp/rootfs/ /
       ignore_errors: yes
 
+    - name: Install idekube-healthcheck binary
+      copy:
+        src: "{{ idekube_healthcheck_binary }}"
+        dest: /usr/local/bin/idekube-healthcheck
+        mode: '0755'
+
     - name: Make vm-init.sh executable
       file:
         path: /etc/idekube/vm-init.sh

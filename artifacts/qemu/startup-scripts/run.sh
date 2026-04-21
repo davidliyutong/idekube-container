@@ -146,7 +146,11 @@ fi
 
 echo "Starting QEMU with monitor on telnet port ${EXPOSE_MONITOR_PORT}..."
 
-${QEMU_BIN} \
+# exec so QEMU replaces this bash wrapper: build_qemu_root.sh captures $! as
+# VM_PID and later sends SIGTERM to it during cleanup; without exec, that
+# signal would only kill the bash wrapper and orphan QEMU. Also makes the
+# container entrypoint (startup.sh → run.sh) forward docker stop cleanly.
+exec ${QEMU_BIN} \
     -M ${MACHINE_TYPE} \
     ${FIRMWARE_OPTS} \
     -cpu ${CPU_TYPE} \

@@ -583,7 +583,7 @@ def qemu_prepare(config, dry_run=False):
 
 
 def qemu_build_tools(config, dry_run=False):
-    """Build cloud-localds and QEMU engine Docker images (stages 3-4)."""
+    """Build cloud-localds, QEMU engine, and per-arch healthcheck binaries (stages 3-4)."""
     # cloud-localds
     stamp_tools = Path(".cache/qemu_images/cloud-localds.created")
     if stamp_tools.exists():
@@ -615,6 +615,51 @@ def qemu_build_tools(config, dry_run=False):
             subprocess.run(cmd, check=True)
             stamp_engine.parent.mkdir(parents=True, exist_ok=True)
             stamp_engine.touch()
+
+    # idekube-healthcheck per-arch binaries (consumed by Ansible during qemu-build-root)
+    qemu_build_healthcheck(config, dry_run=dry_run)
+
+
+def qemu_build_healthcheck(config, dry_run=False):
+    """Cross-compile idekube-healthcheck into .cache/qemu_tools/idekube-healthcheck.<arch>.
+
+    Produces per-arch binaries that build_qemu_root.sh hands to the Ansible
+    playbook, so the VM gets a binary matching its own architecture without
+    depending on the engine image's builder stage.
+    """
+    out_dir = Path(".cache/qemu_tools")
+    stamp = out_dir / ".healthcheck.ready"
+    archs = ("amd64", "arm64")
+
+    if stamp.exists() and all((out_dir / f"idekube-healthcheck.{a}").exists() for a in archs):
+        print("idekube-healthcheck binaries already built (stamp exists), skipping")
+        return
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    src_abs = str(Path("tools/idekube-healthcheck").resolve())
+    out_abs = str(out_dir.resolve())
+
+    build_cmd = " && ".join(
+        f"CGO_ENABLED=0 GOOS=linux GOARCH={a} go build -trimpath -ldflags='-s -w' "
+        f"-o /out/idekube-healthcheck.{a} ."
+        for a in archs
+    )
+    cmd = [
+        "docker", "run", "--rm",
+        "-v", f"{src_abs}:/src",
+        "-v", f"{out_abs}:/out",
+        "-w", "/src",
+        "golang:1.25-alpine",
+        "sh", "-c", f"go mod download && {build_cmd}",
+    ]
+
+    if dry_run:
+        print(f"[dry-run] {' '.join(cmd)}")
+        return
+
+    print(f"Cross-compiling idekube-healthcheck for {', '.join(archs)}")
+    subprocess.run(cmd, check=True)
+    stamp.touch()
 
 
 def qemu_build_root(config, branch, dry_run=False):

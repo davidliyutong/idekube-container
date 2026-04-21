@@ -230,36 +230,15 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         COMMON_ROOTFS="artifacts/qemu/rootfs"
         BRANCH_ROOTFS="artifacts/qemu/${FLAVOR}/rootfs"
 
-        # Extract idekube-healthcheck binary from the engine image
-        HEALTH_BIN_DIR="${COMMON_ROOTFS}/usr/local/bin"
-        mkdir -p "${HEALTH_BIN_DIR}"
-        _TMPCT=$(docker create idekube-qemu-engine:latest) \
-            || { echo "Failed to create temporary container"; exit 1; }
-        docker cp "${_TMPCT}:/usr/local/bin/idekube-healthcheck" "${HEALTH_BIN_DIR}/idekube-healthcheck" \
-            || { docker rm "${_TMPCT}" > /dev/null 2>&1; echo "Failed to extract idekube-healthcheck"; exit 1; }
-        docker rm "${_TMPCT}" > /dev/null
-        chmod +x "${HEALTH_BIN_DIR}/idekube-healthcheck"
-        echo "✓ idekube-healthcheck extracted from engine image."
-
-        # Rsync common rootfs first, then branch-specific overlay on top
-        echo "Copying common rootfs from ${COMMON_ROOTFS}..."
-        vm_rsync "${COMMON_ROOTFS}/" "${SSH_USER}@localhost:/tmp/rootfs/"
-        if [[ -d "${BRANCH_ROOTFS}" ]]; then
-            echo "Copying branch rootfs overlay from ${BRANCH_ROOTFS}..."
-            vm_rsync "${BRANCH_ROOTFS}/" "${SSH_USER}@localhost:/tmp/rootfs/"
+        # Resolve the pre-built idekube-healthcheck binary for the VM arch;
+        # Ansible installs it into the VM via a copy task.
+        HEALTHCHECK_BINARY="$(pwd)/.cache/qemu_tools/idekube-healthcheck.${IMG_ARCH}"
+        if [[ ! -f "${HEALTHCHECK_BINARY}" ]]; then
+            echo "✗ idekube-healthcheck binary not found: ${HEALTHCHECK_BINARY}"
+            echo "  Run 'make build_qemu_tools' (or 'python3 build.py qemu-build-tools') first."
+            exit 1
         fi
-        echo "✓ rootfs copied successfully."
-
-        # Copy compiled frontend into nginx html root
-        if [[ -d "frontend/dist" ]]; then
-            echo "Copying frontend dist to /usr/share/nginx/html/..."
-            vm_ssh "sudo mkdir -p /usr/share/nginx/html"
-            vm_rsync "frontend/dist/" "${SSH_USER}@localhost:/tmp/frontend-dist/"
-            vm_ssh "sudo rsync -a /tmp/frontend-dist/ /usr/share/nginx/html/"
-            echo "✓ Frontend dist copied successfully."
-        else
-            echo "Warning: frontend/dist not found, skipping landing page."
-        fi
+        echo "✓ idekube-healthcheck binary resolved: ${HEALTHCHECK_BINARY}"
 
         # Apply ansible playbook
         PLAYBOOK="manifests/qemu/$BRANCH/install.yml"
@@ -267,7 +246,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             echo "Applying ansible playbook: ${PLAYBOOK}..."
             if command -v ansible-playbook &> /dev/null; then
                 if ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i "localhost," \
-                    --extra-vars "ansible_ssh_pass=${SSH_PASS} ansible_user=${SSH_USER} ansible_port=${SSH_PORT}" \
+                    --extra-vars "ansible_ssh_pass=${SSH_PASS} ansible_user=${SSH_USER} ansible_port=${SSH_PORT} idekube_healthcheck_binary=${HEALTHCHECK_BINARY}" \
                     -c ssh "${PLAYBOOK}"; then
                     echo "✓ Ansible playbook applied successfully!"
                 else
@@ -280,6 +259,31 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             fi
         else
             echo "Warning: Playbook not found: ${PLAYBOOK}"
+        fi
+
+        # Rsync common rootfs first, then branch-specific overlay on top
+        echo "Copying common rootfs from ${COMMON_ROOTFS}..."
+        vm_rsync "${COMMON_ROOTFS}/" "${SSH_USER}@localhost:/tmp/rootfs/"
+        if [[ -d "${BRANCH_ROOTFS}" ]]; then
+            echo "Copying branch rootfs overlay from ${BRANCH_ROOTFS}..."
+            vm_rsync "${BRANCH_ROOTFS}/" "${SSH_USER}@localhost:/tmp/rootfs/"
+        fi
+        echo "✓ rootfs copied successfully."
+
+        # Copy compiled frontend into nginx html root.
+        # Must run AFTER the ansible playbook: the playbook apt-installs
+        # nginx, whose nginx-common postinst populates /usr/share/nginx/html/
+        # with a default index and would clobber anything placed there
+        # earlier. Copying last ensures our index.html is the one that
+        # sticks.
+        if [[ -d "frontend/dist" ]]; then
+            echo "Copying frontend dist to /usr/share/nginx/html/..."
+            vm_rsync "frontend/dist/" "${SSH_USER}@localhost:/tmp/frontend-dist/"
+            vm_ssh "sudo rsync -a /tmp/frontend-dist/ /usr/share/nginx/html/"
+            vm_ssh "rm -rf /tmp/frontend-dist"
+            echo "✓ Frontend dist copied successfully."
+        else
+            echo "Warning: frontend/dist not found, skipping landing page."
         fi
 
         echo ""
