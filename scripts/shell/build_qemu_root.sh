@@ -188,7 +188,7 @@ if [[ -z "${VM_MODE}" ]]; then
         --privileged \
         "${KVM_ARGS[@]}" \
         -p "${SSH_PORT}:22" \
-        -p "${MONITOR_PORT}:${MONITOR_PORT}" \
+        -p "${MONITOR_PORT}:23" \
         -p "${HTTP_PORT}:80" \
         -v "${CACHE_ABS_PATH}:/var/lib/data" \
         -e IDEKUBE_VM_MEMORY="${IDEKUBE_VM_MEMORY}" \

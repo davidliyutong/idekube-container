@@ -1,0 +1,12 @@
+services:
+  idekube_container:
+    image: docker.io/davidliyutong/idekube-container-qemu:featured-kathara-v0.7.3-rc2
+    ports:
+      - "3000:80"
+    devices:
+      - "/dev/kvm:/dev/kvm"
+    volumes:
+      - ./data:/var/lib/data
+    environment:
+      - IDEKUBE_VM_DISK_SIZE=16G
+      - IDEKUBE_VM_MEMORY=8G

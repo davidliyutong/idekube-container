@@ -4,12 +4,15 @@
   become: yes
   vars:
     docker_compose_version: "v2.29.2"
+    docker_major_version: "28"
     netcap_version: "v0.6.11"
     docker_registry: "docker.io"
     kathara_images:
       - kathara/base
       - kathara/frr
       - kathara/quagga
+      - kathara/pox
+      - kathara/sdn
 
   tasks:
     - name: Update apt cache
@@ -32,16 +35,91 @@
 
     - name: Setup Docker
       block:
-        - name: Install with Official Docker Script
+        # Ubuntu 24.04 ships iptables-nft by default. Docker's iptables
+        # manipulation against the nftables backend has been observed to
+        # momentarily drop established connections (e.g. our provisioning
+        # SSH) and to leave the guest network stack in a wedged state.
+        # Pinning to iptables-legacy avoids the backend churn.
+        - name: Switch iptables to legacy backend
+          alternatives:
+            name: "{{ item.name }}"
+            path: "{{ item.path }}"
+          loop:
+            - { name: iptables,  path: /usr/sbin/iptables-legacy  }
+            - { name: ip6tables, path: /usr/sbin/ip6tables-legacy }
+
+        - name: Ensure apt keyrings directory
+          file:
+            path: /etc/apt/keyrings
+            state: directory
+            mode: '0755'
+
+        - name: Add Docker apt signing key
+          get_url:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            dest: /etc/apt/keyrings/docker.asc
+            mode: '0644'
+            force: true
+          register: docker_key
+          until: docker_key is succeeded
+          retries: 5
+          delay: 10
+
+        - name: Detect dpkg architecture
+          command: dpkg --print-architecture
+          register: dpkg_arch
+          changed_when: false
+
+        - name: Add Docker apt repository
+          apt_repository:
+            repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+            state: present
+            filename: docker
+            update_cache: yes
+
+        - name: Resolve latest Docker v{{ docker_major_version }} package version
           shell: |
-            curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-            sh /tmp/get-docker.sh
+            set -o pipefail
+            apt-cache madison docker-ce | awk '$3 ~ /^5:{{ docker_major_version }}\./ {print $3; exit}'
           args:
-            creates: /usr/bin/docker
+            executable: /bin/bash
+          register: docker_ce_version
+          changed_when: false
+          failed_when: docker_ce_version.stdout | trim == ""
+
+        # Block dpkg postinst from starting docker/containerd during the
+        # install. Once started, docker inserts iptables rules and flushes
+        # conntrack, which kills our provisioning SSH session and freezes
+        # the guest network. Systemd units are disabled/masked below so
+        # they also don't start on runtime boot — the container entrypoint
+        # / user starts docker explicitly when the VM is actually in use.
+        - name: Install policy-rc.d to block service auto-start
+          copy:
+            dest: /usr/sbin/policy-rc.d
+            mode: '0755'
+            content: |
+              #!/bin/sh
+              exit 101
+
+        - name: Install Docker v{{ docker_major_version }} packages
+          apt:
+            name:
+              - "docker-ce={{ docker_ce_version.stdout }}"
+              - "docker-ce-cli={{ docker_ce_version.stdout }}"
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: present
+            update_cache: no
           environment:
             DEBIAN_FRONTEND: noninteractive
             NEEDRESTART_MODE: a
             NEEDRESTART_SUSPEND: "1"
+
+        - name: Remove policy-rc.d
+          file:
+            path: /usr/sbin/policy-rc.d
+            state: absent
 
         - name: Add idekube user to docker group
           user:
@@ -115,16 +193,16 @@
             repo: https://github.com/KatharaFramework/Kathara-Labs.git
             dest: /opt/Kathara-Labs
             version: main
-        - name: Start and enable Docker service
-          systemd:
-            name: docker
-            state: started
-            enabled: yes
-        - name: Pull Kathara Docker images
-          docker_image:
-            name: "{{ docker_registry }}/{{ item }}"
-            source: pull
-          loop: "{{ kathara_images }}"
+        # - name: Start and enable Docker service
+        #   systemd:
+        #     name: docker
+        #     state: started
+        #     enabled: yes
+        # - name: Pull Kathara Docker images
+        #   docker_image:
+        #     name: "{{ docker_registry }}/{{ item }}"
+        #     source: pull
+        #   loop: "{{ kathara_images }}"
 
     - name: Clean up
       block:

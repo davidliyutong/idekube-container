@@ -124,7 +124,11 @@ build_qemu_tools: prepare_qemu_files
 	@python3 build.py qemu-build-tools
 
 build_qemu_root: build_qemu_tools frontend
-	@python3 build.py qemu-build-root $(BRANCH)
+	@if [ -z "$(FORCE_QEMU_ROOT)" ] && [ -f ".cache/$(BRANCH)/images/root.img" ]; then \
+		echo "Skipping build_qemu_root: .cache/$(BRANCH)/images/root.img exists (use FORCE_QEMU_ROOT=1 to rebuild)"; \
+	else \
+		python3 build.py qemu-build-root $(BRANCH); \
+	fi
 
 build_qemu: build_qemu_root
 	@python3 build.py qemu-build $(BRANCH)
