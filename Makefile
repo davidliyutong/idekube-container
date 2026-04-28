@@ -17,7 +17,7 @@ BRANCH   ?= featured/base
 LINEUP   ?= base
 
 # Derived variables (used by dev.run)
-GIT_TAG  := $(shell git tag --list --sort=-v:refname | head -n 1 || echo $(GIT_TAG))
+GIT_TAG  := $(shell git tag --list --sort=-v:refname | grep -v -- '-rc\|-alpha\|-beta' | head -n 1 || echo $(GIT_TAG))
 TAG      ?= $(subst /,-,$(BRANCH))-$(GIT_TAG)
 ARCH     := $(shell arch=$$(uname -m); if [ "$$arch" = "x86_64" ]; then echo amd64; else echo $$arch; fi)
 
