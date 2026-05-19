@@ -1,5 +1,8 @@
 # idekube container
 
+> [!IMPORTANT]
+> **This repository is archived.** Development and maintenance have moved to [**idekube-project/idekube-container**](https://github.com/idekube-project/idekube-container). Please refer to the new repository for the latest updates, releases, and issue tracking.
+
 <div style="text-align: center;">
     <img src="assets/screenshot-0.jpg" alt="Screenshot" style="width: 100%; max-width: 100%; height: auto;">
 </div>
